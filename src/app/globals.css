@@ -1,14 +1,19 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f8fafc;
-  --foreground: #0f172a;
-  
+  --background: #F9F5F2;
+  /* Beige */
+  --foreground: #232323;
+  /* Charcoal */
+
   /* Brand Colors */
-  --primary: #115e59; /* Deep Teal/Green */
-  --primary-light: #14b8a6;
-  --secondary: #e2e8f0;
-  
+  --primary: #9F1E13;
+  /* Primary Accent (Red) */
+  --primary-light: #B77B76;
+  /* Accent (Muted Red) */
+  --secondary: #E2D9D0;
+  /* Light Taupe */
+
   /* UI Colors */
   --surface: #ffffff;
   --surface-hover: #f1f5f9;
@@ -17,28 +22,21 @@
   --success: #10b981;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #020617;
-    --foreground: #f8fafc;
-    --primary: #14b8a6;
-    --primary-light: #5eead4;
-    --secondary: #1e293b;
-    --surface: #0f172a;
-    --surface-hover: #1e293b;
-    --border: #334155;
-  }
-}
 
 body {
   color: var(--foreground);
   background: var(--background);
-  font-family: var(--font-inter), sans-serif;
+  font-family: var(--font-inter-tight), sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 
-h1, h2, h3, h4, h5, h6 {
-  font-family: var(--font-outfit), sans-serif;
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-playfair), serif;
 }
 
 /* Premium Form Elements */
@@ -65,7 +63,8 @@ h1, h2, h3, h4, h5, h6 {
 .input-field:focus {
   outline: none;
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.2);
+  box-shadow: 0 0 0 3px rgba(159, 30, 19, 0.2);
+  /* Matching the new primary red */
 }
 
 .input-label {
@@ -90,20 +89,21 @@ h1, h2, h3, h4, h5, h6 {
   align-items: center;
   justify-content: center;
   padding: 0.875rem 2rem;
-  background: linear-gradient(135deg, var(--primary) 0%, #0d9488 100%);
+  background: linear-gradient(135deg, var(--primary) 0%, #B77B76 100%);
   color: white;
   font-weight: 600;
   border-radius: 0.5rem;
   border: none;
   cursor: pointer;
   transition: all 0.3s ease;
-  font-family: var(--font-outfit), sans-serif;
+  font-family: var(--font-inter-tight), sans-serif;
   font-size: 1.125rem;
 }
 
 .btn-primary:hover {
   transform: translateY(-2px);
-  box-shadow: 0 10px 15px -3px rgba(20, 184, 166, 0.3);
+  box-shadow: 0 10px 15px -3px rgba(159, 30, 19, 0.3);
+  /* New primary red */
 }
 
 .btn-primary:active {
@@ -144,7 +144,7 @@ h1, h2, h3, h4, h5, h6 {
   transition: all 0.2s ease;
 }
 
-.custom-checkbox input:checked ~ .checkmark {
+.custom-checkbox input:checked~.checkmark {
   background-color: var(--primary);
   border-color: var(--primary);
 }
@@ -162,7 +162,7 @@ h1, h2, h3, h4, h5, h6 {
   transform: rotate(45deg);
 }
 
-.custom-checkbox input:checked ~ .checkmark:after {
+.custom-checkbox input:checked~.checkmark:after {
   display: block;
 }
 
@@ -191,7 +191,8 @@ h1, h2, h3, h4, h5, h6 {
   left: -10%;
   width: 50vw;
   height: 50vw;
-  background: rgba(20, 184, 166, 0.2);
+  background: rgba(159, 30, 19, 0.05);
+  /* Subdued red */
   animation-delay: 0s;
 }
 
@@ -200,13 +201,19 @@ h1, h2, h3, h4, h5, h6 {
   right: -10%;
   width: 60vw;
   height: 60vw;
-  background: rgba(13, 148, 136, 0.15);
+  background: rgba(183, 123, 118, 0.05);
+  /* Subdued muted red */
   animation-delay: -5s;
 }
 
 @keyframes float {
-  0% { transform: translate(0, 0) scale(1); }
-  100% { transform: translate(5%, 10%) scale(1.1); }
+  0% {
+    transform: translate(0, 0) scale(1);
+  }
+
+  100% {
+    transform: translate(5%, 10%) scale(1.1);
+  }
 }
 
 /* File Upload styling */
@@ -227,7 +234,8 @@ h1, h2, h3, h4, h5, h6 {
 
 .file-upload-wrapper:hover {
   border-color: var(--primary);
-  background: rgba(20, 184, 166, 0.05);
+  background: rgba(159, 30, 19, 0.03);
+  /* Matching primary red */
 }
 
 .file-upload-input {

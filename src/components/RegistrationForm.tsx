@@ -27,9 +27,11 @@ export default function RegistrationForm() {
         consultationType: "Both",
         acceptingClients: "Yes",
         testingMethods: [] as string[],
+        newsHubInterest: "No",
+        omegaBalanceResult: "",
     });
 
-    const [profilePic, setProfilePic] = useState<File | null>(null);
+    const [profilePics, setProfilePics] = useState<File[]>([]);
 
     const getWordCount = (text: string) => {
         return text.trim().split(/\s+/).filter(w => w.length > 0).length;
@@ -59,8 +61,8 @@ export default function RegistrationForm() {
     };
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files && e.target.files[0]) {
-            setProfilePic(e.target.files[0]);
+        if (e.target.files) {
+            setProfilePics(Array.from(e.target.files));
         }
     };
 
@@ -95,24 +97,32 @@ export default function RegistrationForm() {
         setSubmitStatus("idle");
 
         try {
-            let imageUrl = null;
+            let mainImageUrl = null;
+            let galleryUrls: string[] = [];
 
             if (supabase) {
-                if (profilePic) {
-                    const fileExt = profilePic.name.split('.').pop();
-                    const fileName = `${formData.firstName}-${formData.lastName}-${Math.random()}.${fileExt}`;
+                if (profilePics.length > 0) {
+                    for (let i = 0; i < profilePics.length; i++) {
+                        const pic = profilePics[i];
+                        const fileExt = pic.name.split('.').pop();
+                        const fileName = `${formData.firstName}-${formData.lastName}-img${i}-${Math.random()}.${fileExt}`;
 
-                    const { error: uploadError } = await supabase.storage
-                        .from('profiles')
-                        .upload(fileName, profilePic);
+                        const { error: uploadError } = await supabase.storage
+                            .from('profiles')
+                            .upload(fileName, pic);
 
-                    if (uploadError) throw uploadError;
+                        if (uploadError) throw uploadError;
 
-                    const { data: { publicUrl } } = supabase.storage
-                        .from('profiles')
-                        .getPublicUrl(fileName);
+                        const { data: { publicUrl } } = supabase.storage
+                            .from('profiles')
+                            .getPublicUrl(fileName);
 
-                    imageUrl = publicUrl;
+                        if (i === 0) {
+                            mainImageUrl = publicUrl;
+                        } else {
+                            galleryUrls.push(publicUrl);
+                        }
+                    }
                 }
 
                 const { error: dbError } = await supabase
@@ -137,7 +147,10 @@ export default function RegistrationForm() {
                             consultation_type: formData.consultationType,
                             accepting_new_clients: formData.acceptingClients === "Yes",
                             primary_testing_methods: formData.testingMethods,
-                            profile_picture_url: imageUrl,
+                            profile_picture_url: mainImageUrl,
+                            gallery_image_urls: galleryUrls,
+                            news_hub_article_interest: formData.newsHubInterest === "Yes",
+                            omega_balance_result: formData.omegaBalanceResult
                         }
                     ]);
 
@@ -159,7 +172,7 @@ export default function RegistrationForm() {
     if (submitStatus === "success") {
         return (
             <div className="text-center py-10 animate-[fadeIn_0.5s_ease-out_forwards]">
-                <div className="w-20 h-20 mx-auto bg-green-100 text-green-600 rounded-full flex items-center justify-center mb-6">
+                <div className="w-20 h-20 mx-auto bg-[#F9F5F2] text-[var(--primary)] rounded-full flex items-center justify-center mb-6">
                     <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
                 </div>
                 <h2 className="text-3xl font-bold text-[var(--primary)] mb-4">Application Submitted</h2>
@@ -262,6 +275,22 @@ export default function RegistrationForm() {
                                 />
                                 <WordCounter text={formData.credentials} limit={50} />
                             </div>
+
+                            <div className="bg-[var(--surface-hover)] p-5 rounded-xl border border-[var(--border)] mt-4">
+                                <label className="input-label flex justify-between">
+                                    <span>Part 2: My Omega Balance Test Result</span>
+                                    <span className="text-xs opacity-60 font-normal">Optional</span>
+                                </label>
+                                <p className="text-sm opacity-70 mb-3">If you have taken a Test-Based Nutrition Omega Balance test, please share your resulting ratio.</p>
+                                <input
+                                    type="text"
+                                    name="omegaBalanceResult"
+                                    value={formData.omegaBalanceResult}
+                                    onChange={handleInputChange}
+                                    className="input-field max-w-xs"
+                                    placeholder="e.g. 3:1"
+                                />
+                            </div>
                         </div>
                     </div>
                 )}
@@ -363,7 +392,7 @@ export default function RegistrationForm() {
                                         className="input-field"
                                         required
                                     >
-                                        <option value="">Select your broad professional bucket...</option>
+                                        <option value="">Select your broad professional category...</option>
                                         <option value="Medical & Clinical Specialists">1. Medical & Clinical Specialists</option>
                                         <option value="Allied Health & Clinical Practitioners">2. Allied Health & Clinical Practitioners</option>
                                         <option value="Functional, Preventative & Holistic Health">3. Functional, Preventative & Holistic Health</option>
@@ -544,71 +573,70 @@ export default function RegistrationForm() {
                             {/* SPECIALIZATION TAGS */}
                             {formData.primaryCategory && (
                                 <div className="animate-[fadeIn_0.4s_ease-out]">
-                                    <label className="input-label mb-3 text-[var(--primary)] font-semibold text-lg border-b border-[var(--border)] pb-2">
-                                        Clinical Focus Tags <span className="text-sm font-normal text-[var(--foreground)] opacity-70 ml-2">(Select all that apply)</span>
+                                    <label className="input-label mb-5 mt-8 text-[var(--primary)] font-semibold text-xl border-b border-[var(--border)] pb-2 flex justify-between items-center">
+                                        <span>TBN Focus Tags</span>
+                                        <span className="text-sm font-normal text-[var(--foreground)] opacity-70 ml-2">(Select all that apply)</span>
                                     </label>
 
-                                    {/* Cross-Category Power Tags */}
-                                    <div className="mb-6">
-                                        <h4 className="text-sm font-semibold mb-3 text-orange-600 uppercase tracking-wider">Featured Power Tags</h4>
-                                        <div className="flex flex-wrap gap-2">
-                                            {[
-                                                "Menopause & Perimenopause", "Gut Health & IBS", "Longevity & Anti-Ageing",
-                                                "Skin from Within", "Hormone Optimization", "Neurodivergence (ADHD/Autism)"
-                                            ].map((tag) => (
-                                                <label key={tag} className="custom-checkbox bg-orange-50 px-3 py-2 rounded-lg border border-orange-200 hover:bg-orange-100 transition-colors w-auto mb-0">
-                                                    <input type="checkbox" checked={formData.specializationTags.includes(tag)} onChange={() => handleCheckboxChange("specializationTags", tag)} />
-                                                    <span className="checkmark min-w-[20px] mb-0 mr-2 border-orange-400"></span>
-                                                    <span className="text-sm text-orange-800 font-medium">{tag}</span>
-                                                </label>
-                                            ))}
+                                    <div className="space-y-8 mb-8">
+                                        {/* Women's Health */}
+                                        <div>
+                                            <h4 className="text-sm font-semibold mb-3 text-[var(--primary)] uppercase tracking-wider">Women's Health</h4>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-y-3 gap-x-4">
+                                                {["Puberty & Teen Hormones", "Fertility & Conception", "Pregnancy & Postnatal Health", "Perimenopause", "Menopause", "Hormonal Conditions", "Mood, Brain Fog & Hormonal Health"].map(tag => (
+                                                    <label key={tag} className="custom-checkbox"><input type="checkbox" checked={formData.specializationTags.includes(tag)} onChange={() => handleCheckboxChange("specializationTags", tag)} /><span className="checkmark min-w-[20px]"></span><span className="text-sm">{tag}</span></label>
+                                                ))}
+                                            </div>
                                         </div>
-                                    </div>
 
-                                    {/* Category Specific Tags */}
-                                    <div>
-                                        <h4 className="text-sm font-semibold mb-3 text-[var(--primary)] uppercase tracking-wider">Category-Specific Tags</h4>
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-y-4 gap-x-2">
-                                            {/* 1. Medical Tags */}
-                                            {formData.primaryCategory === "Medical & Clinical Specialists" &&
-                                                ["Cardiovascular Health", "Metabolic Syndrome", "Thyroid Health", "Endocrinology", "Pediatric Development", "Orthopedics", "Longevity Diagnostics", "Advanced Blood Testing", "Bio-Identical Hormone Replacement Therapy (BHRT)"].map(tag => (
-                                                    <label key={tag} className="custom-checkbox"><input type="checkbox" checked={formData.specializationTags.includes(tag)} onChange={() => handleCheckboxChange("specializationTags", tag)} /><span className="checkmark min-w-[20px]"></span><span className="text-xs">{tag}</span></label>
+                                        {/* Men's Health */}
+                                        <div>
+                                            <h4 className="text-sm font-semibold mb-3 text-[var(--primary)] uppercase tracking-wider">Men's Health</h4>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-y-3 gap-x-4">
+                                                {["Teen & Young Men’s Hormones", "Testosterone & Hormonal Health", "Male Fertility", "Metabolic Health & Weight", "Stress, Mood & Burnout", "Healthy Ageing for Men"].map(tag => (
+                                                    <label key={tag} className="custom-checkbox"><input type="checkbox" checked={formData.specializationTags.includes(tag)} onChange={() => handleCheckboxChange("specializationTags", tag)} /><span className="checkmark min-w-[20px]"></span><span className="text-sm">{tag}</span></label>
                                                 ))}
+                                            </div>
+                                        </div>
 
-                                            {/* 2. Allied Health Tags */}
-                                            {formData.primaryCategory === "Allied Health & Clinical Practitioners" &&
-                                                ["Musculoskeletal Rehab", "Gait Analysis", "Post-Operative Recovery", "Clinical Dietetics", "Occupational Health", "Sports Injury Prevention", "Corrective Exercise", "Speech & Language Pathology"].map(tag => (
-                                                    <label key={tag} className="custom-checkbox"><input type="checkbox" checked={formData.specializationTags.includes(tag)} onChange={() => handleCheckboxChange("specializationTags", tag)} /><span className="checkmark min-w-[20px]"></span><span className="text-xs">{tag}</span></label>
+                                        {/* Children's Health */}
+                                        <div>
+                                            <h4 className="text-sm font-semibold mb-3 text-[var(--primary)] uppercase tracking-wider">Children's Health</h4>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-y-3 gap-x-4">
+                                                {["Early Childhood Development", "Gut Health in Children", "Neurodivergent Children (ADHD & Focus)", "Immunity, Growth & Development", "Teen Health & Hormones", "Emotional Wellbeing & Behaviour"].map(tag => (
+                                                    <label key={tag} className="custom-checkbox"><input type="checkbox" checked={formData.specializationTags.includes(tag)} onChange={() => handleCheckboxChange("specializationTags", tag)} /><span className="checkmark min-w-[20px]"></span><span className="text-sm">{tag}</span></label>
                                                 ))}
+                                            </div>
+                                        </div>
 
-                                            {/* 3. Functional Tags */}
-                                            {formData.primaryCategory === "Functional, Preventative & Holistic Health" &&
-                                                ["Gut Microbiome", "Food Intolerance", "Nutritional Genomics (Nutrigenomics)", "Chronic Inflammation", "Autoimmune Support", "Heavy Metal Detox", "Mitochondrial Health", "Herbal Medicine", "Traditional Chinese Medicine (TCM)", "Lymphatic Health", "Stress Physiology"].map(tag => (
-                                                    <label key={tag} className="custom-checkbox"><input type="checkbox" checked={formData.specializationTags.includes(tag)} onChange={() => handleCheckboxChange("specializationTags", tag)} /><span className="checkmark min-w-[20px]"></span><span className="text-xs">{tag}</span></label>
+                                        {/* Neurodivergence */}
+                                        <div>
+                                            <h4 className="text-sm font-semibold mb-3 text-[var(--primary)] uppercase tracking-wider">Neurodivergence</h4>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-y-3 gap-x-4">
+                                                {["ADHD in Children", "Neurodivergent Teens", "ADHD in Women", "ADHD in Adults", "Focus, Brain Fog & Cognitive Health", "Gut Health & Neurodivergence"].map(tag => (
+                                                    <label key={tag} className="custom-checkbox"><input type="checkbox" checked={formData.specializationTags.includes(tag)} onChange={() => handleCheckboxChange("specializationTags", tag)} /><span className="checkmark min-w-[20px]"></span><span className="text-sm">{tag}</span></label>
                                                 ))}
+                                            </div>
+                                        </div>
 
-                                            {/* 4. Coaching Tags */}
-                                            {formData.primaryCategory === "Health, Lifestyle & Mindset Coaching" &&
-                                                ["Habits & Behavior Change", "Smoking Cessation", "Weight Management", "Circadian Rhythm/Sleep Hygiene", "Stress Resilience", "Executive Performance", "Mindful Eating", "Glucose Monitoring (CGM) Support"].map(tag => (
-                                                    <label key={tag} className="custom-checkbox"><input type="checkbox" checked={formData.specializationTags.includes(tag)} onChange={() => handleCheckboxChange("specializationTags", tag)} /><span className="checkmark min-w-[20px]"></span><span className="text-xs">{tag}</span></label>
+                                        {/* Skin Health */}
+                                        <div>
+                                            <h4 className="text-sm font-semibold mb-3 text-[var(--primary)] uppercase tracking-wider">Skin Health</h4>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-y-3 gap-x-4">
+                                                {["Acne & Teen Skin", "Hormonal Skin", "Chronic Skin Conditions", "Skin & Gut Health", "Skin Ageing & Collagen Health", "Perimenopause Skin"].map(tag => (
+                                                    <label key={tag} className="custom-checkbox"><input type="checkbox" checked={formData.specializationTags.includes(tag)} onChange={() => handleCheckboxChange("specializationTags", tag)} /><span className="checkmark min-w-[20px]"></span><span className="text-sm">{tag}</span></label>
                                                 ))}
+                                            </div>
+                                        </div>
 
-                                            {/* 5. Mental Health Tags */}
-                                            {formData.primaryCategory === "Mental Health & Neuro-Specialists" &&
-                                                ["ADHD & Neurodiversity", "Anxiety & Depression", "Cognitive Decline Prevention", "Brain Fog", "Trauma-Informed Care", "Burnout Recovery", "Neuroplasticity", "Gut-Brain Axis", "Psychotherapy"].map(tag => (
-                                                    <label key={tag} className="custom-checkbox"><input type="checkbox" checked={formData.specializationTags.includes(tag)} onChange={() => handleCheckboxChange("specializationTags", tag)} /><span className="checkmark min-w-[20px]"></span><span className="text-xs">{tag}</span></label>
+                                        {/* Sports Performance */}
+                                        <div>
+                                            <h4 className="text-sm font-semibold mb-3 text-[var(--primary)] uppercase tracking-wider">Sports Performance</h4>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-y-3 gap-x-4">
+                                                {["Youth Performance", "Athletes (Amateur to Elite)", "Event & Competition Preparation", "Coaches & Performance Teams", "Peak Performance & Longevity"].map(tag => (
+                                                    <label key={tag} className="custom-checkbox"><input type="checkbox" checked={formData.specializationTags.includes(tag)} onChange={() => handleCheckboxChange("specializationTags", tag)} /><span className="checkmark min-w-[20px]"></span><span className="text-sm">{tag}</span></label>
                                                 ))}
-
-                                            {/* 6. Sports Tags */}
-                                            {formData.primaryCategory === "Sports Performance & Rehabilitation" &&
-                                                ["Hypertrophy & Strength", "Endurance Nutrition", "VO2 Max Optimization", "Injury Rehabilitation", "Biomechanics", "Athletic Recovery", "Performance Breathwork", "Supplement Protocols"].map(tag => (
-                                                    <label key={tag} className="custom-checkbox"><input type="checkbox" checked={formData.specializationTags.includes(tag)} onChange={() => handleCheckboxChange("specializationTags", tag)} /><span className="checkmark min-w-[20px]"></span><span className="text-xs">{tag}</span></label>
-                                                ))}
-
-                                            {/* Specialization Tags from Table */}
-                                            {["PCOS", "Pregnancy Nutrition", "Postnatal", "Digestive Health", "SIBO/IBS", "Aesthetic Medicine", "Acne Specialist", "Rosacea", "Integrative Skin Health", "Chronic Pain", "Healthy Ageing"].map(tag => (
-                                                <label key={tag} className="custom-checkbox"><input type="checkbox" checked={formData.specializationTags.includes(tag)} onChange={() => handleCheckboxChange("specializationTags", tag)} /><span className="checkmark min-w-[20px]"></span><span className="text-xs">{tag}</span></label>
-                                            ))}
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -620,8 +648,8 @@ export default function RegistrationForm() {
                                 <label className="input-label mb-3 text-[var(--primary)] font-semibold text-lg border-b border-[var(--border)] pb-2">1. Foundational Health Testing (TBN)</label>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-8">
                                     {[
-                                        "Zinzino Balance Testing (Omega 6:3)",
-                                        "Zinzino Gut Health Testing"
+                                        "Finger Prick Balance Testing (Omega 6:3)",
+                                        "Finger Prick Gut Health Testing"
                                     ].map((method) => (
                                         <label key={method} className="custom-checkbox bg-[var(--surface-hover)] p-3 rounded-lg border border-[var(--primary-light)] border-opacity-30 hover:border-opacity-100 transition-all">
                                             <input type="checkbox" checked={formData.testingMethods.includes(method)} onChange={() => handleCheckboxChange("testingMethods", method)} />
@@ -668,20 +696,38 @@ export default function RegistrationForm() {
                 {/* Step 6 */}
                 {step === 6 && (
                     <div className="animate-[fadeSlideUp_0.4s_ease-out]">
-                        <h2 className="form-section-title">6. Profile Picture</h2>
-                        <div className="space-y-6">
+                        <h2 className="form-section-title">6. Media & Contributions</h2>
+                        <div className="space-y-10">
                             <div>
-                                <label className="input-label mb-2">Upload High-Quality Headshot *</label>
-                                <p className="text-sm opacity-70 mb-4">Please provide a professional, unobstructed photo of yourself.</p>
+                                <label className="input-label mb-2">Upload High-Quality Images *</label>
+                                <p className="text-sm opacity-70 mb-4">Please provide a professional headshot (this will be your primary photo), plus any additional images for your gallery.</p>
 
                                 <div className="file-upload-wrapper">
-                                    <input required={!profilePic} type="file" accept="image/*" onChange={handleFileChange} className="file-upload-input" />
+                                    <input required={profilePics.length === 0} type="file" accept="image/*" multiple onChange={handleFileChange} className="file-upload-input" />
                                     <div className="text-[var(--primary)] mb-2">
                                         <svg className="w-8 h-8 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
                                     </div>
-                                    <span className="font-medium text-[var(--foreground)] mt-2">
-                                        {profilePic ? profilePic.name : "Drag & drop or click to upload"}
+                                    <span className="font-medium text-[var(--foreground)] mt-2 text-center text-sm px-4 break-words">
+                                        {profilePics.length > 0 ? profilePics.map(f => f.name).join(", ") : "Drag & drop or click to upload multiple images"}
                                     </span>
+                                </div>
+                            </div>
+
+                            <div className="bg-[var(--surface-hover)] p-6 rounded-xl border border-[var(--border)]">
+                                <h3 className="text-[var(--primary)] text-lg font-semibold mb-2">News Hub Contributions</h3>
+                                <p className="text-sm opacity-70 mb-4 leading-relaxed">Would you be interested in submitting articles to the Test-Based Nutrition News Hub? <br />(Published articles will link directly back to your microsite profile!)</p>
+
+                                <div className="flex gap-6">
+                                    <label className="custom-checkbox items-center !mb-0">
+                                        <input type="radio" name="newsHubInterest" value="Yes" checked={formData.newsHubInterest === "Yes"} onChange={handleInputChange} />
+                                        <span className="checkmark min-w-[20px] !rounded-full"></span>
+                                        <span className="ml-2 font-medium">Yes, I'm interested</span>
+                                    </label>
+                                    <label className="custom-checkbox items-center !mb-0">
+                                        <input type="radio" name="newsHubInterest" value="No" checked={formData.newsHubInterest === "No"} onChange={handleInputChange} />
+                                        <span className="checkmark min-w-[20px] !rounded-full"></span>
+                                        <span className="ml-2 font-medium">No, not right now</span>
+                                    </label>
                                 </div>
                             </div>
 
