@@ -28,7 +28,6 @@ export default function RegistrationForm() {
         acceptingClients: "Yes",
         testingMethods: [] as string[],
         newsHubInterest: "No",
-        omegaBalanceResult: "",
         firstBalanceResult: "",
         secondBalanceResult: "",
         whyJoinedTBN: "",
@@ -152,13 +151,12 @@ export default function RegistrationForm() {
                             accepting_new_clients: formData.acceptingClients === "Yes",
                             primary_testing_methods: formData.testingMethods,
                             profile_picture_url: mainImageUrl,
-                            gallery_image_urls: galleryUrls,
-                            news_hub_article_interest: formData.newsHubInterest === "Yes",
-                            omega_balance_result: formData.omegaBalanceResult,
                             first_balance_result: formData.firstBalanceResult,
                             second_balance_result: formData.secondBalanceResult,
                             why_joined_tbn: formData.whyJoinedTBN,
-                            other_blood_tests: formData.otherBloodTests
+                            other_blood_tests: formData.otherBloodTests,
+                            gallery_image_urls: galleryUrls,
+                            news_hub_article_interest: formData.newsHubInterest === "Yes"
                         }
                     ]);
 
@@ -284,21 +282,6 @@ export default function RegistrationForm() {
                                 <WordCounter text={formData.credentials} limit={50} />
                             </div>
 
-                            <div className="bg-[var(--surface-hover)] p-5 rounded-xl border border-[var(--border)] mt-4">
-                                <label className="input-label flex justify-between">
-                                    <span>Part 2: My Omega Balance Test Result</span>
-                                    <span className="text-xs opacity-60 font-normal">Optional</span>
-                                </label>
-                                <p className="text-sm opacity-70 mb-3">If you have taken a Test-Based Nutrition Omega Balance test, please share your resulting ratio.</p>
-                                <input
-                                    type="text"
-                                    name="omegaBalanceResult"
-                                    value={formData.omegaBalanceResult}
-                                    onChange={handleInputChange}
-                                    className="input-field max-w-xs"
-                                    placeholder="e.g. 3:1"
-                                />
-                            </div>
                         </div>
                     </div>
                 )}
