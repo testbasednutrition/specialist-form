@@ -1,4 +1,4 @@
-import { Inter_Tight, Playfair_Display } from "next/font/google";
+import { Inter_Tight, DM_Sans, Montserrat } from "next/font/google";
 import "./globals.css";
 
 const interTight = Inter_Tight({
@@ -7,10 +7,16 @@ const interTight = Inter_Tight({
   weight: ["300", "400", "500", "600", "700"],
 });
 
-const playfairDisplay = Playfair_Display({
-  variable: "--font-playfair",
+const dmSans = DM_Sans({
+  variable: "--font-dm-sans",
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+  weight: ["400", "500", "700"],
+});
+
+const montserrat = Montserrat({
+  variable: "--font-montserrat",
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700"],
 });
 
 export const metadata = {
@@ -26,7 +32,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${interTight.variable} ${playfairDisplay.variable} antialiased`}
+        className={`${interTight.variable} ${dmSans.variable} ${montserrat.variable} antialiased`}
       >
         {children}
       </body>

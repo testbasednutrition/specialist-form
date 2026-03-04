@@ -29,6 +29,10 @@ export default function RegistrationForm() {
         testingMethods: [] as string[],
         newsHubInterest: "No",
         omegaBalanceResult: "",
+        firstBalanceResult: "",
+        secondBalanceResult: "",
+        whyJoinedTBN: "",
+        otherBloodTests: "",
     });
 
     const [profilePics, setProfilePics] = useState<File[]>([]);
@@ -150,7 +154,11 @@ export default function RegistrationForm() {
                             profile_picture_url: mainImageUrl,
                             gallery_image_urls: galleryUrls,
                             news_hub_article_interest: formData.newsHubInterest === "Yes",
-                            omega_balance_result: formData.omegaBalanceResult
+                            omega_balance_result: formData.omegaBalanceResult,
+                            first_balance_result: formData.firstBalanceResult,
+                            second_balance_result: formData.secondBalanceResult,
+                            why_joined_tbn: formData.whyJoinedTBN,
+                            other_blood_tests: formData.otherBloodTests
                         }
                     ]);
 
@@ -392,11 +400,11 @@ export default function RegistrationForm() {
                                         className="input-field"
                                         required
                                     >
-                                        <option value="">Select your broad professional category...</option>
+                                        <option value="">Select your professional category...</option>
                                         <option value="Medical & Clinical Specialists">1. Medical & Clinical Specialists</option>
                                         <option value="Allied Health & Clinical Practitioners">2. Allied Health & Clinical Practitioners</option>
                                         <option value="Functional, Preventative & Holistic Health">3. Functional, Preventative & Holistic Health</option>
-                                        <option value="Health, Lifestyle & Mindset Coaching">4. Health, Lifestyle & Mindset Coaching</option>
+                                        <option value="Health, Lifestyle, Mindset & Beauty">4. Health, Lifestyle, Mindset & Beauty</option>
                                         <option value="Mental Health & Neuro-Specialists">5. Mental Health & Neuro-Specialists</option>
                                         <option value="Sports Performance & Rehabilitation">6. Sports Performance & Rehabilitation</option>
                                     </select>
@@ -501,12 +509,15 @@ export default function RegistrationForm() {
                                             )}
 
                                             {/* 4. Coaching */}
-                                            {formData.primaryCategory === "Health, Lifestyle & Mindset Coaching" && (
+                                            {formData.primaryCategory === "Health, Lifestyle, Mindset & Beauty" && (
                                                 <>
                                                     <optgroup label="Foundational Coaching">
                                                         <option value="Health Coach">Health Coach</option>
                                                         <option value="Wellness Coach">Wellness Coach</option>
                                                         <option value="Lifestyle Coach">Lifestyle Coach</option>
+                                                        <option value="Aesthetician">Aesthetician</option>
+                                                        <option value="Beautician">Beautician</option>
+                                                        <option value="TBN Trained Specialist">TBN Trained Specialist</option>
                                                     </optgroup>
                                                     <optgroup label="Targeted Coaching">
                                                         <option value="Nutrition Coach">Nutrition Coach</option>
@@ -583,7 +594,7 @@ export default function RegistrationForm() {
                                         <div>
                                             <h4 className="text-sm font-semibold mb-3 text-[var(--primary)] uppercase tracking-wider">Women's Health</h4>
                                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-y-3 gap-x-4">
-                                                {["Puberty & Teen Hormones", "Fertility & Conception", "Pregnancy & Postnatal Health", "Perimenopause", "Menopause", "Hormonal Conditions", "Mood, Brain Fog & Hormonal Health"].map(tag => (
+                                                {["Puberty & Teen Hormones", "Fertility & Conception", "Pregnancy & Postnatal Health", "Perimenopause", "Menopause", "Hormonal Conditions", "Mood, Brain Fog & Hormonal Health", "Gut Health"].map(tag => (
                                                     <label key={tag} className="custom-checkbox"><input type="checkbox" checked={formData.specializationTags.includes(tag)} onChange={() => handleCheckboxChange("specializationTags", tag)} /><span className="checkmark min-w-[20px]"></span><span className="text-sm">{tag}</span></label>
                                                 ))}
                                             </div>
@@ -593,7 +604,7 @@ export default function RegistrationForm() {
                                         <div>
                                             <h4 className="text-sm font-semibold mb-3 text-[var(--primary)] uppercase tracking-wider">Men's Health</h4>
                                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-y-3 gap-x-4">
-                                                {["Teen & Young Men’s Hormones", "Testosterone & Hormonal Health", "Male Fertility", "Metabolic Health & Weight", "Stress, Mood & Burnout", "Healthy Ageing for Men"].map(tag => (
+                                                {["Teen & Young Men’s Hormones", "Testosterone & Hormonal Health", "Male Fertility", "Metabolic Health & Weight", "Stress, Mood & Burnout", "Healthy Ageing for Men", "Gut Health"].map(tag => (
                                                     <label key={tag} className="custom-checkbox"><input type="checkbox" checked={formData.specializationTags.includes(tag)} onChange={() => handleCheckboxChange("specializationTags", tag)} /><span className="checkmark min-w-[20px]"></span><span className="text-sm">{tag}</span></label>
                                                 ))}
                                             </div>
@@ -687,6 +698,21 @@ export default function RegistrationForm() {
                                             <span className="text-xs whitespace-nowrap overflow-hidden text-ellipsis mr-2" title={method}>{method}</span>
                                         </label>
                                     ))}
+                                </div>
+
+                                <div className="mt-8 bg-[var(--surface-hover)] p-5 rounded-xl border border-[var(--border)] mt-4">
+                                    <label className="input-label flex justify-between">
+                                        <span>3. Any other Blood tests</span>
+                                        <span className="text-xs opacity-60 font-normal">Optional</span>
+                                    </label>
+                                    <p className="text-sm opacity-70 mb-3">Please list any other relevant blood tests you frequently run.</p>
+                                    <textarea
+                                        name="otherBloodTests"
+                                        value={formData.otherBloodTests}
+                                        onChange={handleInputChange}
+                                        className="input-field min-h-[80px]"
+                                        placeholder="e.g. Full Thyroid Panel, Autoimmune Screen..."
+                                    />
                                 </div>
                             </div>
                         </div>
