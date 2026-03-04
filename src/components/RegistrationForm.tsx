@@ -282,6 +282,51 @@ export default function RegistrationForm() {
                                 <WordCounter text={formData.credentials} limit={50} />
                             </div>
 
+                            <div className="bg-[var(--surface-hover)] p-5 rounded-xl border border-[var(--border)] mt-4">
+                                <label className="input-label flex justify-between">
+                                    <span>Part 2: My Omega Balance Test Result</span>
+                                    <span className="text-xs opacity-60 font-normal">Optional</span>
+                                </label>
+                                <p className="text-sm opacity-70 mb-3">If you have taken a Test-Based Nutrition Omega Balance test, please share your resulting ratio.</p>
+
+                                <div className="space-y-4">
+                                    <div>
+                                        <label className="text-sm font-medium opacity-80 mb-2 block">1st Balance test result</label>
+                                        <input
+                                            type="text"
+                                            name="firstBalanceResult"
+                                            value={formData.firstBalanceResult}
+                                            onChange={handleInputChange}
+                                            className="input-field max-w-xs"
+                                            placeholder="e.g. 15:1"
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="text-sm font-medium opacity-80 mb-2 block">2nd balance test result</label>
+                                        <input
+                                            type="text"
+                                            name="secondBalanceResult"
+                                            value={formData.secondBalanceResult}
+                                            onChange={handleInputChange}
+                                            className="input-field max-w-xs"
+                                            placeholder="e.g. 3:1"
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="text-sm font-medium opacity-80 mb-2 block">Why I joined Test-Based Nutrition!</label>
+                                        <textarea
+                                            name="whyJoinedTBN"
+                                            value={formData.whyJoinedTBN}
+                                            onChange={handleInputChange}
+                                            className={`input-field min-h-[100px] leading-relaxed ${getWordCount(formData.whyJoinedTBN) > 100 ? '!border-red-500' : ''}`}
+                                            placeholder="E.g. Discovered the power of Omega-3 balance for my clients..."
+                                        />
+                                        <WordCounter text={formData.whyJoinedTBN} limit={100} />
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 )}
