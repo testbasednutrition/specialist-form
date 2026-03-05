@@ -72,7 +72,24 @@ export default function RegistrationForm() {
 
     const handleNewsAttachmentChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files) {
-            setNewsAttachments(Array.from(e.target.files));
+            const files = Array.from(e.target.files);
+            const validFiles: File[] = [];
+            const maxSizeMB = 5;
+            let hasBigFiles = false;
+
+            files.forEach(file => {
+                if (file.size > maxSizeMB * 1024 * 1024) {
+                    hasBigFiles = true;
+                } else {
+                    validFiles.push(file);
+                }
+            });
+
+            if (hasBigFiles) {
+                alert(`Some files were too large and were skipped. Please ensure each attachment is under ${maxSizeMB}MB.`);
+            }
+
+            setNewsAttachments(validFiles);
         }
     };
 
@@ -814,7 +831,7 @@ export default function RegistrationForm() {
                                 {formData.newsHubInterest === "Yes" && (
                                     <div className="mt-6 animate-[fadeIn_0.3s_ease-out]">
                                         <label className="input-label mb-2">Attach News Articles (Optional)</label>
-                                        <p className="text-sm opacity-70 mb-4">You can upload Word documents, PDFs, or images for your article submission.</p>
+                                        <p className="text-sm opacity-70 mb-4">You can upload Word documents, PDFs, or images. (Maximum size: 5MB per file)</p>
 
                                         <div className="file-upload-wrapper">
                                             <input type="file" accept=".pdf,.doc,.docx,image/*" multiple onChange={handleNewsAttachmentChange} className="file-upload-input" />
