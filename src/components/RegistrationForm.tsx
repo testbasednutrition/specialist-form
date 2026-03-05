@@ -66,7 +66,24 @@ export default function RegistrationForm() {
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files) {
-            setProfilePics(Array.from(e.target.files));
+            const files = Array.from(e.target.files);
+            const validFiles: File[] = [];
+            const maxSizeMB = 5;
+            let hasBigFiles = false;
+
+            files.forEach(file => {
+                if (file.size > maxSizeMB * 1024 * 1024) {
+                    hasBigFiles = true;
+                } else {
+                    validFiles.push(file);
+                }
+            });
+
+            if (hasBigFiles) {
+                alert(`Some images were too large and skipped. Please ensure your pictures are under ${maxSizeMB}MB.`);
+            }
+
+            setProfilePics(validFiles);
         }
     };
 
@@ -126,33 +143,67 @@ export default function RegistrationForm() {
         try {
             let mainImageUrl = null;
             let galleryUrls: string[] = [];
+            let newsArticleUrls: string[] = [];
 
             if (supabase) {
+                const supabaseClient = supabase;
+                // 1. Upload Profile Images Concurrently
                 if (profilePics.length > 0) {
-                    for (let i = 0; i < profilePics.length; i++) {
-                        const pic = profilePics[i];
+                    const profileUploadPromises = profilePics.map(async (pic, i) => {
                         const fileExt = pic.name.split('.').pop();
                         const fileName = `${formData.firstName}-${formData.lastName}-img${i}-${Math.random()}.${fileExt}`;
 
-                        const { error: uploadError } = await supabase.storage
+                        const { error: uploadError } = await supabaseClient.storage
                             .from('profiles')
                             .upload(fileName, pic);
 
                         if (uploadError) throw uploadError;
 
-                        const { data: { publicUrl } } = supabase.storage
+                        const { data: { publicUrl } } = supabaseClient.storage
                             .from('profiles')
                             .getPublicUrl(fileName);
 
-                        if (i === 0) {
-                            mainImageUrl = publicUrl;
-                        } else {
-                            galleryUrls.push(publicUrl);
-                        }
+                        return { index: i, url: publicUrl };
+                    });
+
+                    const uploadedProfiles = await Promise.all(profileUploadPromises);
+                    uploadedProfiles.sort((a, b) => a.index - b.index);
+
+                    if (uploadedProfiles.length > 0) {
+                        mainImageUrl = uploadedProfiles[0].url;
+                        galleryUrls = uploadedProfiles.slice(1).map(p => p.url);
                     }
                 }
 
-                const { error: dbError } = await supabase
+                // 2. Upload News Attachments Concurrently
+                if (formData.newsHubInterest === "Yes" && newsAttachments.length > 0) {
+                    try {
+                        const newsUploadPromises = newsAttachments.map(async (attachment, i) => {
+                            const fileExt = attachment.name.split('.').pop();
+                            const fileName = `${formData.firstName}-${formData.lastName}-news-${i}-${Math.random()}.${fileExt}`;
+
+                            const { error: uploadError } = await supabaseClient.storage
+                                .from('news_articles') // Ensure this bucket exists in Supabase
+                                .upload(fileName, attachment);
+
+                            if (uploadError) throw uploadError;
+
+                            const { data: { publicUrl } } = supabaseClient.storage
+                                .from('news_articles')
+                                .getPublicUrl(fileName);
+
+                            return publicUrl;
+                        });
+
+                        newsArticleUrls = await Promise.all(newsUploadPromises);
+                    } catch (attachmentError) {
+                        console.error("Failed to process news attachments (bucket may be missing):", attachmentError);
+                        // We intentionally don't throw here so the main form still submits successfully
+                    }
+                }
+
+                // 3. Insert Database Record
+                const { error: dbError } = await supabaseClient
                     .from('specialists')
                     .insert([
                         {
@@ -180,31 +231,12 @@ export default function RegistrationForm() {
                             why_joined_tbn: formData.whyJoinedTBN,
                             other_blood_tests: formData.otherBloodTests,
                             gallery_image_urls: galleryUrls,
-                            news_hub_article_interest: formData.newsHubInterest === "Yes"
+                            news_hub_article_interest: formData.newsHubInterest === "Yes",
+                            news_article_urls: newsArticleUrls
                         }
                     ]);
 
                 if (dbError) throw dbError;
-
-                if (formData.newsHubInterest === "Yes" && newsAttachments.length > 0) {
-                    try {
-                        for (let i = 0; i < newsAttachments.length; i++) {
-                            const attachment = newsAttachments[i];
-                            const fileExt = attachment.name.split('.').pop();
-                            const fileName = `${formData.firstName}-${formData.lastName}-news-${i}-${Math.random()}.${fileExt}`;
-
-                            const { error: uploadError } = await supabase.storage
-                                .from('news_articles') // Ensure this bucket exists in Supabase
-                                .upload(fileName, attachment);
-
-                            if (uploadError) console.error("Error uploading news attachment:", uploadError);
-                            // Store the urls somewhere if we need to link them to the specialist, or this might just drop them in a bucket for admin review
-                        }
-                    } catch (attachmentError) {
-                        console.error("Failed to process news attachments (bucket may be missing):", attachmentError);
-                        // We intentionally don't throw here so the main form still submits successfully
-                    }
-                }
             } else {
                 console.warn("Supabase is not configured yet. Simulating success state.");
                 await new Promise(resolve => setTimeout(resolve, 1500));
@@ -797,8 +829,8 @@ export default function RegistrationForm() {
                         <h2 className="form-section-title">6. Media & Contributions</h2>
                         <div className="space-y-10">
                             <div>
-                                <label className="input-label mb-2">Upload High-Quality Images *</label>
-                                <p className="text-sm opacity-70 mb-4">Please provide a professional headshot (this will be your primary photo), plus any additional images for your gallery.</p>
+                                <label className="input-label mb-2">Profile & Gallery Images *</label>
+                                <p className="text-sm opacity-70 mb-4">Upload a professional headshot and up to 3 gallery images of your clinic or practice. First image will be your main profile photo. (Max 5MB each)</p>
 
                                 <div className="file-upload-wrapper">
                                     <input required={profilePics.length === 0} type="file" accept="image/*" multiple onChange={handleFileChange} className="file-upload-input" />
