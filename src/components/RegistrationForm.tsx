@@ -35,6 +35,7 @@ export default function RegistrationForm() {
     });
 
     const [profilePics, setProfilePics] = useState<File[]>([]);
+    const [newsAttachments, setNewsAttachments] = useState<File[]>([]);
 
     const getWordCount = (text: string) => {
         return text.trim().split(/\s+/).filter(w => w.length > 0).length;
@@ -69,15 +70,21 @@ export default function RegistrationForm() {
         }
     };
 
+    const handleNewsAttachmentChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files) {
+            setNewsAttachments(Array.from(e.target.files));
+        }
+    };
+
     const nextStep = () => setStep((s) => Math.min(s + 1, 6));
     const prevStep = () => setStep((s) => Math.max(s - 1, 1));
 
     // Validation logic
     const isStep1Valid = formData.firstName && formData.lastName && formData.title && formData.bio && getWordCount(formData.bio) <= 100;
     const isStep2Valid = formData.credentials && getWordCount(formData.credentials) <= 50;
-    const isStep3Valid = formData.testimonial1 && getWordCount(formData.testimonial1) <= 100
-        && getWordCount(formData.testimonial2) <= 100
-        && getWordCount(formData.testimonial3) <= 100;
+    const isStep3Valid = formData.testimonial1 && getWordCount(formData.testimonial1) <= 50
+        && getWordCount(formData.testimonial2) <= 50
+        && getWordCount(formData.testimonial3) <= 50;
     const isStep4Valid = formData.email && formData.address;
 
     const canProceed = () => {
@@ -161,6 +168,21 @@ export default function RegistrationForm() {
                     ]);
 
                 if (dbError) throw dbError;
+
+                if (formData.newsHubInterest === "Yes" && newsAttachments.length > 0) {
+                    for (let i = 0; i < newsAttachments.length; i++) {
+                        const attachment = newsAttachments[i];
+                        const fileExt = attachment.name.split('.').pop();
+                        const fileName = `${formData.firstName}-${formData.lastName}-news-${i}-${Math.random()}.${fileExt}`;
+
+                        const { error: uploadError } = await supabase.storage
+                            .from('news_articles') // Ensure this bucket exists in Supabase
+                            .upload(fileName, attachment);
+
+                        if (uploadError) console.error("Error uploading news attachment:", uploadError);
+                        // Store the urls somewhere if we need to link them to the specialist, or this might just drop them in a bucket for admin review
+                    }
+                }
             } else {
                 console.warn("Supabase is not configured yet. Simulating success state.");
                 await new Promise(resolve => setTimeout(resolve, 1500));
@@ -335,7 +357,7 @@ export default function RegistrationForm() {
                 {step === 3 && (
                     <div className="animate-[fadeSlideUp_0.4s_ease-out]">
                         <h2 className="form-section-title">3. Client Results & Testimonials</h2>
-                        <p className="text-sm opacity-80 mb-6">Provide up to 3 powerful testimonials showcasing your results. (75-100 words each)</p>
+                        <p className="text-sm opacity-80 mb-6">Provide up to 3 powerful testimonials showcasing your results. (Max 50 words each)</p>
 
                         <div className="space-y-8">
                             <div>
@@ -345,10 +367,10 @@ export default function RegistrationForm() {
                                     name="testimonial1"
                                     value={formData.testimonial1}
                                     onChange={handleInputChange}
-                                    className={`input-field min-h-[120px] leading-relaxed ${getWordCount(formData.testimonial1) > 100 ? '!border-red-500' : ''}`}
+                                    className={`input-field min-h-[120px] leading-relaxed ${getWordCount(formData.testimonial1) > 50 ? '!border-red-500' : ''}`}
                                     placeholder="&quot;Fiona has helped me regain control over my health...&quot;&#10;— Testimonial from a Client with Hashimoto's"
                                 />
-                                <WordCounter text={formData.testimonial1} limit={100} />
+                                <WordCounter text={formData.testimonial1} limit={50} />
                             </div>
 
                             <div>
@@ -360,10 +382,10 @@ export default function RegistrationForm() {
                                     name="testimonial2"
                                     value={formData.testimonial2}
                                     onChange={handleInputChange}
-                                    className={`input-field min-h-[120px] leading-relaxed ${getWordCount(formData.testimonial2) > 100 ? '!border-red-500' : ''}`}
+                                    className={`input-field min-h-[120px] leading-relaxed ${getWordCount(formData.testimonial2) > 50 ? '!border-red-500' : ''}`}
                                     placeholder="&quot;I had been struggling with constant tiredness...&quot;&#10;— Testimonial from Fiona's Personal Experience"
                                 />
-                                <WordCounter text={formData.testimonial2} limit={100} />
+                                <WordCounter text={formData.testimonial2} limit={50} />
                             </div>
 
                             <div>
@@ -375,10 +397,10 @@ export default function RegistrationForm() {
                                     name="testimonial3"
                                     value={formData.testimonial3}
                                     onChange={handleInputChange}
-                                    className={`input-field min-h-[120px] leading-relaxed ${getWordCount(formData.testimonial3) > 100 ? '!border-red-500' : ''}`}
+                                    className={`input-field min-h-[120px] leading-relaxed ${getWordCount(formData.testimonial3) > 50 ? '!border-red-500' : ''}`}
                                     placeholder="&quot;Fiona's personalised approach to nutrition helped me understand...&quot;&#10;— Testimonial from a Client with Gut Health Issues"
                                 />
-                                <WordCounter text={formData.testimonial3} limit={100} />
+                                <WordCounter text={formData.testimonial3} limit={50} />
                             </div>
                         </div>
                     </div>
@@ -783,6 +805,23 @@ export default function RegistrationForm() {
                                         <span className="ml-2 font-medium">No, not right now</span>
                                     </label>
                                 </div>
+
+                                {formData.newsHubInterest === "Yes" && (
+                                    <div className="mt-6 animate-[fadeIn_0.3s_ease-out]">
+                                        <label className="input-label mb-2">Attach News Articles (Optional)</label>
+                                        <p className="text-sm opacity-70 mb-4">You can upload Word documents, PDFs, or images for your article submission.</p>
+
+                                        <div className="file-upload-wrapper">
+                                            <input type="file" accept=".pdf,.doc,.docx,image/*" multiple onChange={handleNewsAttachmentChange} className="file-upload-input" />
+                                            <div className="text-[var(--primary)] mb-2">
+                                                <svg className="w-8 h-8 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path></svg>
+                                            </div>
+                                            <span className="font-medium text-[var(--foreground)] mt-2 text-center text-sm px-4 break-words">
+                                                {newsAttachments.length > 0 ? newsAttachments.map(f => f.name).join(", ") : "Drag & drop or click to upload multiple attachments"}
+                                            </span>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
 
                             {submitStatus === "error" && (
