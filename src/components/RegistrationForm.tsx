@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
+import imageCompression from 'browser-image-compression';
 
 export default function RegistrationForm() {
     const [step, setStep] = useState(1);
@@ -153,9 +154,25 @@ export default function RegistrationForm() {
                         const fileExt = pic.name.split('.').pop();
                         const fileName = `${formData.firstName}-${formData.lastName}-img${i}-${Math.random()}.${fileExt}`;
 
+                        // Compress the image before uploading
+                        const options = {
+                            maxSizeMB: 1, // Compress to max 1MB
+                            maxWidthOrHeight: 1920,
+                            useWebWorker: true
+                        };
+                        let fileToUpload = pic;
+                        try {
+                            // Only compress if it's an image
+                            if (pic.type.startsWith('image/')) {
+                                fileToUpload = await imageCompression(pic, options);
+                            }
+                        } catch (error) {
+                            console.error("Compression error:", error);
+                        }
+
                         const { error: uploadError } = await supabaseClient.storage
                             .from('profiles')
-                            .upload(fileName, pic);
+                            .upload(fileName, fileToUpload);
 
                         if (uploadError) throw uploadError;
 
@@ -182,9 +199,20 @@ export default function RegistrationForm() {
                             const fileExt = attachment.name.split('.').pop();
                             const fileName = `${formData.firstName}-${formData.lastName}-news-${i}-${Math.random()}.${fileExt}`;
 
+                            let fileToUpload = attachment;
+                            try {
+                                // Compress if the attachment happens to be a massive image
+                                if (attachment.type.startsWith('image/')) {
+                                    const options = { maxSizeMB: 1, maxWidthOrHeight: 1920, useWebWorker: true };
+                                    fileToUpload = await imageCompression(attachment, options);
+                                }
+                            } catch (e) {
+                                console.error(e);
+                            }
+
                             const { error: uploadError } = await supabaseClient.storage
                                 .from('news_articles') // Ensure this bucket exists in Supabase
-                                .upload(fileName, attachment);
+                                .upload(fileName, fileToUpload);
 
                             if (uploadError) throw uploadError;
 
