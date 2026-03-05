@@ -170,17 +170,22 @@ export default function RegistrationForm() {
                 if (dbError) throw dbError;
 
                 if (formData.newsHubInterest === "Yes" && newsAttachments.length > 0) {
-                    for (let i = 0; i < newsAttachments.length; i++) {
-                        const attachment = newsAttachments[i];
-                        const fileExt = attachment.name.split('.').pop();
-                        const fileName = `${formData.firstName}-${formData.lastName}-news-${i}-${Math.random()}.${fileExt}`;
+                    try {
+                        for (let i = 0; i < newsAttachments.length; i++) {
+                            const attachment = newsAttachments[i];
+                            const fileExt = attachment.name.split('.').pop();
+                            const fileName = `${formData.firstName}-${formData.lastName}-news-${i}-${Math.random()}.${fileExt}`;
 
-                        const { error: uploadError } = await supabase.storage
-                            .from('news_articles') // Ensure this bucket exists in Supabase
-                            .upload(fileName, attachment);
+                            const { error: uploadError } = await supabase.storage
+                                .from('news_articles') // Ensure this bucket exists in Supabase
+                                .upload(fileName, attachment);
 
-                        if (uploadError) console.error("Error uploading news attachment:", uploadError);
-                        // Store the urls somewhere if we need to link them to the specialist, or this might just drop them in a bucket for admin review
+                            if (uploadError) console.error("Error uploading news attachment:", uploadError);
+                            // Store the urls somewhere if we need to link them to the specialist, or this might just drop them in a bucket for admin review
+                        }
+                    } catch (attachmentError) {
+                        console.error("Failed to process news attachments (bucket may be missing):", attachmentError);
+                        // We intentionally don't throw here so the main form still submits successfully
                     }
                 }
             } else {
