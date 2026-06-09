@@ -4,6 +4,27 @@ import { useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import imageCompression from 'browser-image-compression';
 
+const BASELINE_TESTS = [
+    "Vitamin D Levels (FP)",
+    "HbA1c - Diabetes (FP)",
+    "hS-CRP Heart Screening (FP)",
+    "CRP Inflammation (FP)",
+    "RF Rheumatoid Screening (FP)",
+    "Cortisol Stress Hormone (FP)",
+    "Ferritin Iron Levels (FP)",
+    "Cystatin C Kidney Screening (FP)",
+    "HCG+B Pregnancy Indication (FP)",
+    "AMH Ovarian Reserve (FP)",
+    "Progesterone Ovulation (FP)",
+    "Folate (FP)",
+    "NT-proBNP Heart Monitoring (VBD)",
+    "TSH Thyroid Screening (VBD)",
+    "FSH Menopause (VBD)",
+    "Vitamin B12 Levels (VBD+C)",
+    "Testosterone (VBD+C)",
+    "RSV/Influenza A/B (NS)"
+];
+
 export default function RegistrationForm() {
     const [step, setStep] = useState(1);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -94,6 +115,42 @@ export default function RegistrationForm() {
                 return { ...prev, [category]: currentList.filter((item) => item !== value) };
             }
             return { ...prev, [category]: [...currentList, value] };
+        });
+    };
+
+    const handleTierChange = (tier: string, tests: string[]) => {
+        setFormData((prev) => {
+            const currentList = prev.testingMethods;
+            const isChecked = currentList.includes(tier);
+            
+            if (isChecked) {
+                return {
+                    ...prev,
+                    testingMethods: currentList.filter((item) => item !== tier && !tests.includes(item))
+                };
+            } else {
+                return {
+                    ...prev,
+                    testingMethods: [...currentList, tier]
+                };
+            }
+        });
+    };
+
+    const handleSubtestChange = (subtest: string, parentTier: string) => {
+        setFormData((prev) => {
+            const currentList = prev.testingMethods;
+            let newList = [...currentList];
+            
+            if (newList.includes(subtest)) {
+                newList = newList.filter((item) => item !== subtest);
+            } else {
+                newList.push(subtest);
+                if (!newList.includes(parentTier)) {
+                    newList.push(parentTier);
+                }
+            }
+            return { ...prev, testingMethods: newList };
         });
     };
 
@@ -903,56 +960,110 @@ export default function RegistrationForm() {
 
                             <div>
                                 <label className="input-label mb-3 text-[var(--primary)] font-semibold text-lg border-b border-[var(--border)] pb-2">1. Foundational Health Testing (TBN)</label>
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-8">
-                                    {[
-                                        { id: "Foundational Testing", title: "Foundational Testing", subtext: "In-clinic or online" },
-                                        { id: "Baseline Screening", title: "Baseline Screening", subtext: "Rapid finger-prick point-of-care" },
-                                        { id: "Advanced Screening", title: "Advanced Screening", subtext: "Phlebotomy (where required)" }
-                                    ].map((item) => (
-                                        <label key={item.id} className="custom-checkbox bg-[var(--surface-hover)] p-4 rounded-lg border border-[var(--primary-light)] border-opacity-30 hover:border-opacity-100 transition-all flex items-start cursor-pointer">
-                                            <input type="checkbox" checked={formData.testingMethods.includes(item.id)} onChange={() => handleCheckboxChange("testingMethods", item.id)} />
+                                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8 items-start">
+                                    {/* Card 1: Foundational Testing */}
+                                    <div className={`bg-[var(--surface-hover)] p-5 rounded-xl border transition-all duration-300 flex flex-col ${formData.testingMethods.includes("Foundational Testing") ? 'border-[var(--primary)] shadow-sm' : 'border-[var(--border)] border-opacity-60'}`}>
+                                        <label className="custom-checkbox items-start cursor-pointer w-full pb-3 border-b border-[var(--border)] border-opacity-50">
+                                            <input 
+                                                type="checkbox" 
+                                                checked={formData.testingMethods.includes("Foundational Testing")} 
+                                                onChange={() => handleTierChange("Foundational Testing", ["Omega Balance", "Gut Microbiome", "Intolerance Testing"])} 
+                                            />
                                             <span className="checkmark min-w-[20px] mt-0.5"></span>
                                             <div className="ml-2 flex flex-col">
-                                                <span className="text-sm font-bold text-[var(--primary)] tracking-wide uppercase">{item.title}</span>
-                                                <span className="text-[11px] text-[var(--foreground)] opacity-70 font-normal leading-tight mt-0.5">{item.subtext}</span>
+                                                <span className="text-sm font-bold text-[var(--primary)] tracking-wide uppercase">FOUNDATIONAL TESTING</span>
+                                                <span className="text-[11px] text-[var(--foreground)] opacity-70 font-normal leading-tight mt-0.5">In-clinic or online</span>
                                             </div>
                                         </label>
-                                    ))}
-                                </div>
+                                        
+                                        {/* Sub-checkboxes list */}
+                                        {formData.testingMethods.includes("Foundational Testing") && (
+                                            <div className="mt-4 pl-8 space-y-3 animate-[fadeIn_0.2s_ease-out]">
+                                                {["Omega Balance", "Gut Microbiome", "Intolerance Testing"].map((subtest) => (
+                                                    <label key={subtest} className="custom-checkbox items-center cursor-pointer mb-0">
+                                                        <input 
+                                                            type="checkbox" 
+                                                            checked={formData.testingMethods.includes(subtest)} 
+                                                            onChange={() => handleSubtestChange(subtest, "Foundational Testing")} 
+                                                        />
+                                                        <span className="checkmark min-w-[16px] w-4 h-4 !after:left-[4px] !after:top-[1px] !after:w-[4px] !after:h-[8px]"></span>
+                                                        <span className="text-xs font-medium text-[var(--foreground)] opacity-90">{subtest}</span>
+                                                    </label>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
 
-                                <label className="input-label mb-3 text-[var(--primary)] font-semibold text-lg border-b border-[var(--border)] pb-2">2. 15-Minute Point of Care Testing</label>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-y-4 gap-x-2">
-                                    {[
-                                        "Vitamin D Levels (FP)",
-                                        "HbA1c - Diabetes (FP)",
-                                        "hS-CRP Heart Screening (FP)",
-                                        "CRP Inflammation (FP)",
-                                        "RF Rheumatoid Screening (FP)",
-                                        "Cortisol Stress Hormone (FP)",
-                                        "Ferritin Iron Levels (FP)",
-                                        "Cystatin C Kidney Screening (FP)",
-                                        "HCG+B Pregnancy Indication (FP)",
-                                        "AMH Ovarian Reserve (FP)",
-                                        "Progesterone Ovulation (FP)",
-                                        "Folate (FP)",
-                                        "NT-proBNP Heart Monitoring (VBD)",
-                                        "TSH Thyroid Screening (VBD)",
-                                        "FSH Menopause (VBD)",
-                                        "Vitamin B12 Levels (VBD+C)",
-                                        "Testosterone (VBD+C)",
-                                        "RSV/Influenza A/B (NS)"
-                                    ].map((method) => (
-                                        <label key={method} className="custom-checkbox">
-                                            <input type="checkbox" checked={formData.testingMethods.includes(method)} onChange={() => handleCheckboxChange("testingMethods", method)} />
-                                            <span className="checkmark min-w-[20px]"></span>
-                                            <span className="text-xs whitespace-nowrap overflow-hidden text-ellipsis mr-2" title={method}>{method}</span>
+                                    {/* Card 2: Baseline Screening */}
+                                    <div className={`bg-[var(--surface-hover)] p-5 rounded-xl border transition-all duration-300 flex flex-col ${formData.testingMethods.includes("Baseline Screening") ? 'border-[var(--primary)] shadow-sm' : 'border-[var(--border)] border-opacity-60'}`}>
+                                        <label className="custom-checkbox items-start cursor-pointer w-full pb-3 border-b border-[var(--border)] border-opacity-50">
+                                            <input 
+                                                type="checkbox" 
+                                                checked={formData.testingMethods.includes("Baseline Screening")} 
+                                                onChange={() => handleTierChange("Baseline Screening", BASELINE_TESTS)} 
+                                            />
+                                            <span className="checkmark min-w-[20px] mt-0.5"></span>
+                                            <div className="ml-2 flex flex-col">
+                                                <span className="text-sm font-bold text-[var(--primary)] tracking-wide uppercase">BASELINE SCREENING</span>
+                                                <span className="text-[11px] text-[var(--foreground)] opacity-70 font-normal leading-tight mt-0.5">Rapid finger-prick point-of-care</span>
+                                            </div>
                                         </label>
-                                    ))}
+                                        
+                                        {/* Sub-checkboxes list */}
+                                        {formData.testingMethods.includes("Baseline Screening") && (
+                                            <div className="mt-4 pl-8 pr-1 space-y-3 max-h-[300px] overflow-y-auto custom-scrollbar animate-[fadeIn_0.2s_ease-out]">
+                                                {BASELINE_TESTS.map((subtest) => (
+                                                    <label key={subtest} className="custom-checkbox items-center cursor-pointer mb-0">
+                                                        <input 
+                                                            type="checkbox" 
+                                                            checked={formData.testingMethods.includes(subtest)} 
+                                                            onChange={() => handleSubtestChange(subtest, "Baseline Screening")} 
+                                                        />
+                                                        <span className="checkmark min-w-[16px] w-4 h-4 !after:left-[4px] !after:top-[1px] !after:w-[4px] !after:h-[8px]"></span>
+                                                        <span className="text-xs font-medium text-[var(--foreground)] opacity-90">{subtest}</span>
+                                                    </label>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* Card 3: Advanced Screening */}
+                                    <div className={`bg-[var(--surface-hover)] p-5 rounded-xl border transition-all duration-300 flex flex-col ${formData.testingMethods.includes("Advanced Screening") ? 'border-[var(--primary)] shadow-sm' : 'border-[var(--border)] border-opacity-60'}`}>
+                                        <label className="custom-checkbox items-start cursor-pointer w-full pb-3 border-b border-[var(--border)] border-opacity-50">
+                                            <input 
+                                                type="checkbox" 
+                                                checked={formData.testingMethods.includes("Advanced Screening")} 
+                                                onChange={() => handleTierChange("Advanced Screening", ["Testosterone", "Thyroid (TSH)", "Vitamin B12"])} 
+                                            />
+                                            <span className="checkmark min-w-[20px] mt-0.5"></span>
+                                            <div className="ml-2 flex flex-col">
+                                                <span className="text-sm font-bold text-[var(--primary)] tracking-wide uppercase">ADVANCED SCREENING</span>
+                                                <span className="text-[11px] text-[var(--foreground)] opacity-70 font-normal leading-tight mt-0.5">Phlebotomy (where required)</span>
+                                            </div>
+                                        </label>
+                                        
+                                        {/* Sub-checkboxes list */}
+                                        {formData.testingMethods.includes("Advanced Screening") && (
+                                            <div className="mt-4 pl-8 space-y-3 animate-[fadeIn_0.2s_ease-out]">
+                                                {["Testosterone", "Thyroid (TSH)", "Vitamin B12"].map((subtest) => (
+                                                    <label key={subtest} className="custom-checkbox items-center cursor-pointer mb-0">
+                                                        <input 
+                                                            type="checkbox" 
+                                                            checked={formData.testingMethods.includes(subtest)} 
+                                                            onChange={() => handleSubtestChange(subtest, "Advanced Screening")} 
+                                                        />
+                                                        <span className="checkmark min-w-[16px] w-4 h-4 !after:left-[4px] !after:top-[1px] !after:w-[4px] !after:h-[8px]"></span>
+                                                        <span className="text-xs font-medium text-[var(--foreground)] opacity-90">{subtest}</span>
+                                                    </label>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
 
                                 <div className="mt-8 bg-[var(--surface-hover)] p-5 rounded-xl border border-[var(--border)] mt-4">
                                     <label className="input-label flex justify-between">
-                                        <span>3. Any other Blood tests</span>
+                                        <span>2. Any other Blood tests</span>
                                         <span className="text-xs opacity-60 font-normal">Optional</span>
                                     </label>
                                     <p className="text-sm opacity-70 mb-3">Please list any other relevant blood tests you frequently run.</p>
