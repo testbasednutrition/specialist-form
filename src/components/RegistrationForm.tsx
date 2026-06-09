@@ -85,6 +85,7 @@ export default function RegistrationForm() {
         secondBalanceResult: "",
         whyJoinedTBN: "",
         otherBloodTests: "",
+        experience: "",
     });
 
     const [profilePic, setProfilePic] = useState<File | null>(null);
@@ -222,7 +223,7 @@ export default function RegistrationForm() {
     const prevStep = () => setStep((s) => Math.max(s - 1, 1));
 
     // Validation logic
-    const isStep1Valid = formData.firstName && formData.lastName && formData.title && formData.bio && getWordCount(formData.bio) <= 100;
+    const isStep1Valid = formData.firstName && formData.lastName && formData.title && formData.bio && formData.experience && getWordCount(formData.bio) <= 100;
     const isStep2Valid = formData.credentials 
         && getWordCount(formData.credentials) <= 50
         && getWordCount(formData.whyJoinedTBN) <= 50;
@@ -397,7 +398,8 @@ export default function RegistrationForm() {
                             other_blood_tests: formData.otherBloodTests,
                             gallery_image_urls: galleryUrls,
                             news_hub_article_interest: formData.newsHubInterest === "Yes",
-                            news_article_urls: newsArticleUrls
+                            news_article_urls: newsArticleUrls,
+                            experience: formData.experience
                         }
                     ]);
 
@@ -497,6 +499,24 @@ export default function RegistrationForm() {
                                     placeholder="Tell us about yourself. E.g., Fiona is a registered Nutritional Therapist... She creates tailored test-based protocols..."
                                 />
                                 <WordCounter text={formData.bio} limit={100} />
+                            </div>
+
+                            <div>
+                                <label className="input-label">Years of Experience *</label>
+                                <select
+                                    required
+                                    name="experience"
+                                    value={formData.experience}
+                                    onChange={handleInputChange}
+                                    className="input-field"
+                                >
+                                    <option value="">Select Years of Experience</option>
+                                    {["1", "2", "3", "4", "5", "5+", "10+", "20+"].map(val => (
+                                        <option key={val} value={val}>
+                                            {val} {val === "1" ? "Year" : "Years"}
+                                        </option>
+                                    ))}
+                                </select>
                             </div>
                         </div>
                     </div>
