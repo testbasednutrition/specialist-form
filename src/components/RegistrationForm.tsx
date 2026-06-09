@@ -9,6 +9,37 @@ export default function RegistrationForm() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submitStatus, setSubmitStatus] = useState<"idle" | "success" | "error">("idle");
 
+    const [qualifications, setQualifications] = useState<string[]>([""]);
+
+    const updateQualifications = (newList: string[]) => {
+        setQualifications(newList);
+        setFormData(prev => ({
+            ...prev,
+            credentials: newList.filter(q => q.trim().length > 0).join("; ")
+        }));
+    };
+
+    const handleQualificationChange = (index: number, value: string) => {
+        const newList = [...qualifications];
+        newList[index] = value;
+        updateQualifications(newList);
+    };
+
+    const addQualificationField = () => {
+        if (qualifications.length < 15) {
+            updateQualifications([...qualifications, ""]);
+        }
+    };
+
+    const removeQualificationField = (index: number) => {
+        if (qualifications.length > 1) {
+            const newList = qualifications.filter((_, i) => i !== index);
+            updateQualifications(newList);
+        } else {
+            updateQualifications([""]);
+        }
+    };
+
     const [formData, setFormData] = useState({
         firstName: "",
         lastName: "",
@@ -35,7 +66,8 @@ export default function RegistrationForm() {
         otherBloodTests: "",
     });
 
-    const [profilePics, setProfilePics] = useState<File[]>([]);
+    const [profilePic, setProfilePic] = useState<File | null>(null);
+    const [galleryPics, setGalleryPics] = useState<File[]>([]);
     const [newsAttachments, setNewsAttachments] = useState<File[]>([]);
 
     const getWordCount = (text: string) => {
@@ -65,7 +97,21 @@ export default function RegistrationForm() {
         });
     };
 
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleProfilePicChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files.length > 0) {
+            const file = e.target.files[0];
+            const maxSizeMB = 5;
+
+            if (file.size > maxSizeMB * 1024 * 1024) {
+                alert(`The profile image was too large. Please ensure your picture is under ${maxSizeMB}MB.`);
+                return;
+            }
+
+            setProfilePic(file);
+        }
+    };
+
+    const handleGalleryPicsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files) {
             const files = Array.from(e.target.files);
             const validFiles: File[] = [];
@@ -81,10 +127,14 @@ export default function RegistrationForm() {
             });
 
             if (hasBigFiles) {
-                alert(`Some images were too large and skipped. Please ensure your pictures are under ${maxSizeMB}MB.`);
+                alert(`Some gallery images were too large and skipped. Please ensure your pictures are under ${maxSizeMB}MB.`);
             }
 
-            setProfilePics(validFiles);
+            const combined = [...galleryPics, ...validFiles].slice(0, 10);
+            if (galleryPics.length + validFiles.length > 10) {
+                alert("You can upload a maximum of 10 gallery images. Only the first 10 selected images have been kept.");
+            }
+            setGalleryPics(combined);
         }
     };
 
@@ -116,7 +166,9 @@ export default function RegistrationForm() {
 
     // Validation logic
     const isStep1Valid = formData.firstName && formData.lastName && formData.title && formData.bio && getWordCount(formData.bio) <= 100;
-    const isStep2Valid = formData.credentials && getWordCount(formData.credentials) <= 50;
+    const isStep2Valid = formData.credentials 
+        && getWordCount(formData.credentials) <= 50
+        && getWordCount(formData.whyJoinedTBN) <= 50;
     const isStep3Valid = formData.testimonial1 && getWordCount(formData.testimonial1) <= 50
         && getWordCount(formData.testimonial2) <= 50
         && getWordCount(formData.testimonial3) <= 50;
@@ -148,13 +200,46 @@ export default function RegistrationForm() {
 
             if (supabase) {
                 const supabaseClient = supabase;
-                // 1. Upload Profile Images Concurrently
-                if (profilePics.length > 0) {
-                    const profileUploadPromises = profilePics.map(async (pic, i) => {
-                        const fileExt = pic.name.split('.').pop();
-                        const fileName = `${formData.firstName}-${formData.lastName}-img${i}-${Math.random()}.${fileExt}`;
+                // 1. Upload Profile Pic
+                if (profilePic) {
+                    const fileExt = profilePic.name.split('.').pop();
+                    const fileName = `${formData.firstName}-${formData.lastName}-profile-${Math.random()}.${fileExt}`;
 
-                        // Compress the image before uploading
+                    // Compress the image before uploading
+                    const options = {
+                        maxSizeMB: 1, // Compress to max 1MB
+                        maxWidthOrHeight: 1920,
+                        useWebWorker: true
+                    };
+                    let fileToUpload = profilePic;
+                    try {
+                        // Only compress if it's an image
+                        if (profilePic.type.startsWith('image/')) {
+                            fileToUpload = await imageCompression(profilePic, options);
+                        }
+                    } catch (error) {
+                        console.error("Profile pic compression error:", error);
+                    }
+
+                    const { error: uploadError } = await supabaseClient.storage
+                        .from('profiles')
+                        .upload(fileName, fileToUpload);
+
+                    if (uploadError) throw uploadError;
+
+                    const { data: { publicUrl } } = supabaseClient.storage
+                        .from('profiles')
+                        .getPublicUrl(fileName);
+
+                    mainImageUrl = publicUrl;
+                }
+
+                // 2. Upload Gallery Pics Concurrently
+                if (galleryPics.length > 0) {
+                    const galleryUploadPromises = galleryPics.map(async (pic, i) => {
+                        const fileExt = pic.name.split('.').pop();
+                        const fileName = `${formData.firstName}-${formData.lastName}-gallery-${i}-${Math.random()}.${fileExt}`;
+
                         const options = {
                             maxSizeMB: 1, // Compress to max 1MB
                             maxWidthOrHeight: 1920,
@@ -162,12 +247,11 @@ export default function RegistrationForm() {
                         };
                         let fileToUpload = pic;
                         try {
-                            // Only compress if it's an image
                             if (pic.type.startsWith('image/')) {
                                 fileToUpload = await imageCompression(pic, options);
                             }
                         } catch (error) {
-                            console.error("Compression error:", error);
+                            console.error("Gallery pic compression error:", error);
                         }
 
                         const { error: uploadError } = await supabaseClient.storage
@@ -183,13 +267,9 @@ export default function RegistrationForm() {
                         return { index: i, url: publicUrl };
                     });
 
-                    const uploadedProfiles = await Promise.all(profileUploadPromises);
-                    uploadedProfiles.sort((a, b) => a.index - b.index);
-
-                    if (uploadedProfiles.length > 0) {
-                        mainImageUrl = uploadedProfiles[0].url;
-                        galleryUrls = uploadedProfiles.slice(1).map(p => p.url);
-                    }
+                    const uploadedGallery = await Promise.all(galleryUploadPromises);
+                    uploadedGallery.sort((a, b) => a.index - b.index);
+                    galleryUrls = uploadedGallery.map(g => g.url);
                 }
 
                 // 2. Upload News Attachments Concurrently
@@ -372,18 +452,52 @@ export default function RegistrationForm() {
                         <div className="space-y-6">
                             <div>
                                 <label className="input-label flex justify-between">
-                                    <span>List your main credentials and expertise (Bullet Points style) *</span>
-                                    <span className="text-xs font-normal opacity-70">(Max 50 words)</span>
+                                    <span>List your main credentials and expertise *</span>
+                                    <span className="text-xs font-normal opacity-70">(Max 50 words total)</span>
                                 </label>
-                                <textarea
-                                    required
-                                    name="credentials"
-                                    value={formData.credentials}
-                                    onChange={handleInputChange}
-                                    className={`input-field min-h-[160px] leading-relaxed ${getWordCount(formData.credentials) > 50 ? '!border-red-500' : ''}`}
-                                    placeholder="- Qualified Naturopathic Nutritionist - College of Naturopathic Medicine, London&#10;- Founder of FigTree Nutrition & Health&#10;- Specialist in Gut Health, Hormone Balance, and Fertility&#10;- Partner of Test-Based Nutrition for Advanced Health Testing"
-                                />
-                                <WordCounter text={formData.credentials} limit={50} />
+                                <div className="space-y-3">
+                                    {qualifications.map((qual, index) => (
+                                        <div key={index} className="flex items-center gap-3 animate-[fadeIn_0.2s_ease-out]">
+                                            <span className="text-sm font-semibold text-[var(--primary)] opacity-70 w-6">
+                                                {index + 1}.
+                                            </span>
+                                            <input
+                                                type="text"
+                                                required={index === 0}
+                                                value={qual}
+                                                onChange={(e) => handleQualificationChange(index, e.target.value)}
+                                                className={`input-field ${getWordCount(formData.credentials) > 50 ? '!border-red-500 !ring-red-500' : ''}`}
+                                                placeholder={index === 0 ? "e.g. Qualified Naturopathic Nutritionist - College of Naturopathic Medicine" : "Add another credential"}
+                                            />
+                                            {qualifications.length > 1 && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => removeQualificationField(index)}
+                                                    className="p-3 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-all border border-transparent hover:border-red-200 shrink-0"
+                                                    title="Remove qualification"
+                                                >
+                                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                    </svg>
+                                                </button>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                                <div className="mt-3 flex justify-between items-center">
+                                    <button
+                                        type="button"
+                                        onClick={addQualificationField}
+                                        disabled={qualifications.length >= 15}
+                                        className="text-xs font-semibold text-[var(--primary)] hover:opacity-80 transition-all flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[var(--primary-light)] border-opacity-30 hover:border-opacity-100 bg-[var(--surface-hover)]"
+                                    >
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
+                                        </svg>
+                                        Add another qualification
+                                    </button>
+                                    <WordCounter text={formData.credentials} limit={50} />
+                                </div>
                             </div>
 
                             <div className="bg-[var(--surface-hover)] p-5 rounded-xl border border-[var(--border)] mt-4">
@@ -424,10 +538,10 @@ export default function RegistrationForm() {
                                             name="whyJoinedTBN"
                                             value={formData.whyJoinedTBN}
                                             onChange={handleInputChange}
-                                            className={`input-field min-h-[100px] leading-relaxed ${getWordCount(formData.whyJoinedTBN) > 100 ? '!border-red-500' : ''}`}
+                                            className={`input-field min-h-[100px] leading-relaxed ${getWordCount(formData.whyJoinedTBN) > 50 ? '!border-red-500' : ''}`}
                                             placeholder="E.g. Discovered the power of Omega-3 balance for my clients..."
                                         />
-                                        <WordCounter text={formData.whyJoinedTBN} limit={100} />
+                                        <WordCounter text={formData.whyJoinedTBN} limit={50} />
                                     </div>
                                 </div>
                             </div>
@@ -789,15 +903,19 @@ export default function RegistrationForm() {
 
                             <div>
                                 <label className="input-label mb-3 text-[var(--primary)] font-semibold text-lg border-b border-[var(--border)] pb-2">1. Foundational Health Testing (TBN)</label>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-8">
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-8">
                                     {[
-                                        "Finger Prick Balance Testing (Omega 6:3)",
-                                        "Finger Prick Gut Health Testing"
-                                    ].map((method) => (
-                                        <label key={method} className="custom-checkbox bg-[var(--surface-hover)] p-3 rounded-lg border border-[var(--primary-light)] border-opacity-30 hover:border-opacity-100 transition-all">
-                                            <input type="checkbox" checked={formData.testingMethods.includes(method)} onChange={() => handleCheckboxChange("testingMethods", method)} />
-                                            <span className="checkmark min-w-[20px]"></span>
-                                            <span className="text-sm font-medium text-[var(--primary)]">{method}</span>
+                                        { id: "Foundational Testing", title: "Foundational Testing", subtext: "In-clinic or online" },
+                                        { id: "Baseline Screening", title: "Baseline Screening", subtext: "Rapid finger-prick point-of-care" },
+                                        { id: "Advanced Screening", title: "Advanced Screening", subtext: "Phlebotomy (where required)" }
+                                    ].map((item) => (
+                                        <label key={item.id} className="custom-checkbox bg-[var(--surface-hover)] p-4 rounded-lg border border-[var(--primary-light)] border-opacity-30 hover:border-opacity-100 transition-all flex items-start cursor-pointer">
+                                            <input type="checkbox" checked={formData.testingMethods.includes(item.id)} onChange={() => handleCheckboxChange("testingMethods", item.id)} />
+                                            <span className="checkmark min-w-[20px] mt-0.5"></span>
+                                            <div className="ml-2 flex flex-col">
+                                                <span className="text-sm font-bold text-[var(--primary)] tracking-wide uppercase">{item.title}</span>
+                                                <span className="text-[11px] text-[var(--foreground)] opacity-70 font-normal leading-tight mt-0.5">{item.subtext}</span>
+                                            </div>
                                         </label>
                                     ))}
                                 </div>
@@ -856,18 +974,89 @@ export default function RegistrationForm() {
                     <div className="animate-[fadeSlideUp_0.4s_ease-out]">
                         <h2 className="form-section-title">6. Media & Contributions</h2>
                         <div className="space-y-10">
-                            <div>
-                                <label className="input-label mb-2">Profile & Gallery Images *</label>
-                                <p className="text-sm opacity-70 mb-4">Upload a professional headshot and up to 3 gallery images of your clinic or practice. First image will be your main profile photo. (Max 5MB each)</p>
+                            <div className="space-y-6">
+                                {/* Profile Picture Upload */}
+                                <div>
+                                    <label className="input-label mb-1 font-semibold text-lg text-[var(--primary)]">Profile Photo *</label>
+                                    <p className="text-sm opacity-70 mb-3">Upload a professional headshot (square aspect ratio recommended, max 5MB).</p>
 
-                                <div className="file-upload-wrapper">
-                                    <input required={profilePics.length === 0} type="file" accept="image/*" multiple onChange={handleFileChange} className="file-upload-input" />
-                                    <div className="text-[var(--primary)] mb-2">
-                                        <svg className="w-8 h-8 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                                    {profilePic ? (
+                                        <div className="flex items-center gap-4 p-4 bg-[var(--surface-hover)] rounded-xl border border-[var(--border)] animate-[fadeIn_0.2s_ease-out]">
+                                            <div className="w-16 h-16 rounded-xl overflow-hidden bg-zinc-100 border border-[var(--border)] shrink-0">
+                                                <img
+                                                    src={URL.createObjectURL(profilePic)}
+                                                    alt="Profile Preview"
+                                                    className="w-full h-full object-cover"
+                                                />
+                                            </div>
+                                            <div className="flex-grow min-w-0">
+                                                <p className="text-sm font-medium text-[var(--foreground)] truncate">{profilePic.name}</p>
+                                                <p className="text-xs text-zinc-400">{(profilePic.size / (1024 * 1024)).toFixed(2)} MB</p>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={() => setProfilePic(null)}
+                                                className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors border border-transparent hover:border-red-200"
+                                                title="Remove photo"
+                                            >
+                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <div className="file-upload-wrapper">
+                                            <input required type="file" accept="image/*" onChange={handleProfilePicChange} className="file-upload-input" />
+                                            <div className="text-[var(--primary)] mb-2">
+                                                <svg className="w-8 h-8 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                            </div>
+                                            <span className="font-medium text-[var(--foreground)] mt-2 text-center text-sm px-4">
+                                                Drag & drop or click to upload your profile photo
+                                            </span>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Gallery Images Upload */}
+                                <div>
+                                    <label className="input-label mb-1 font-semibold text-lg text-[var(--primary)]">Gallery Images</label>
+                                    <p className="text-sm opacity-70 mb-3">Upload up to 10 photos of your clinic, treatment rooms, or staff. (Max 5MB each)</p>
+
+                                    <div className="file-upload-wrapper mb-4">
+                                        <input type="file" accept="image/*" multiple onChange={handleGalleryPicsChange} className="file-upload-input" />
+                                        <div className="text-[var(--primary)] mb-2">
+                                            <svg className="w-8 h-8 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                                        </div>
+                                        <span className="font-medium text-[var(--foreground)] mt-2 text-center text-sm px-4">
+                                            Drag & drop or click to upload gallery images (select multiple)
+                                        </span>
                                     </div>
-                                    <span className="font-medium text-[var(--foreground)] mt-2 text-center text-sm px-4 break-words">
-                                        {profilePics.length > 0 ? profilePics.map(f => f.name).join(", ") : "Drag & drop or click to upload multiple images"}
-                                    </span>
+
+                                    {galleryPics.length > 0 && (
+                                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 animate-[fadeIn_0.2s_ease-out]">
+                                            {galleryPics.map((pic, idx) => (
+                                                <div key={idx} className="relative group aspect-square rounded-xl overflow-hidden border border-[var(--border)] bg-zinc-100">
+                                                    <img
+                                                        src={URL.createObjectURL(pic)}
+                                                        alt={`Gallery Preview ${idx + 1}`}
+                                                        className="w-full h-full object-cover"
+                                                    />
+                                                    <div className="absolute inset-0 bg-black bg-opacity-40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setGalleryPics(prev => prev.filter((_, i) => i !== idx))}
+                                                            className="p-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors shadow-md"
+                                                            title="Remove image"
+                                                        >
+                                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                            </svg>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 
