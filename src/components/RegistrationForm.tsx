@@ -1033,7 +1033,7 @@ export default function RegistrationForm() {
                                             <input 
                                                 type="checkbox" 
                                                 checked={formData.testingMethods.includes("Advanced Screening")} 
-                                                onChange={() => handleTierChange("Advanced Screening", ["Testosterone", "Thyroid (TSH)", "Vitamin B12"])} 
+                                                onChange={() => handleTierChange("Advanced Screening", ["Testosterone", "Thyroid (TSH)", "Vitamin B12", "FSH Menopause"])} 
                                             />
                                             <span className="checkmark min-w-[20px] mt-0.5"></span>
                                             <div className="ml-2 flex flex-col">
@@ -1045,7 +1045,7 @@ export default function RegistrationForm() {
                                         {/* Sub-checkboxes list */}
                                         {formData.testingMethods.includes("Advanced Screening") && (
                                             <div className="mt-4 pl-8 space-y-3 animate-[fadeIn_0.2s_ease-out]">
-                                                {["Testosterone", "Thyroid (TSH)", "Vitamin B12"].map((subtest) => (
+                                                {["Testosterone", "Thyroid (TSH)", "Vitamin B12", "FSH Menopause"].map((subtest) => (
                                                     <label key={subtest} className="custom-checkbox items-center cursor-pointer mb-0">
                                                         <input 
                                                             type="checkbox" 
