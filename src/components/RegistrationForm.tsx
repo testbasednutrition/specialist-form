@@ -473,15 +473,15 @@ export default function RegistrationForm() {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
                                     <label className="input-label">First Name *</label>
-                                    <input required type="text" name="firstName" value={formData.firstName} onChange={handleInputChange} className="input-field" placeholder="e.g. Fiona" />
+                                    <input required type="text" name="firstName" value={formData.firstName} onChange={handleInputChange} className="input-field" placeholder="First Name" />
                                 </div>
                                 <div>
                                     <label className="input-label">Last Name *</label>
-                                    <input required type="text" name="lastName" value={formData.lastName} onChange={handleInputChange} className="input-field" placeholder="e.g. Jayne" />
+                                    <input required type="text" name="lastName" value={formData.lastName} onChange={handleInputChange} className="input-field" placeholder="Last Name" />
                                 </div>
                                 <div className="md:col-span-2">
                                     <label className="input-label">Professional Title *</label>
-                                    <input required type="text" name="title" value={formData.title} onChange={handleInputChange} className="input-field" placeholder="e.g. Nutritional Therapist" />
+                                    <input required type="text" name="title" value={formData.title} onChange={handleInputChange} className="input-field" placeholder="Professional Title" />
                                 </div>
                             </div>
 
@@ -686,19 +686,19 @@ export default function RegistrationForm() {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="md:col-span-2">
                                 <label className="input-label">Title / Clinic Name</label>
-                                <input type="text" name="clinicName" value={formData.clinicName} onChange={handleInputChange} className="input-field" placeholder="e.g. The FigTree" />
+                                <input type="text" name="clinicName" value={formData.clinicName} onChange={handleInputChange} className="input-field" placeholder="Clinic Name" />
                             </div>
                             <div>
                                 <label className="input-label">Email Address *</label>
-                                <input required type="email" name="email" value={formData.email} onChange={handleInputChange} className="input-field" placeholder="fionajayne@me.com" />
+                                <input required type="email" name="email" value={formData.email} onChange={handleInputChange} className="input-field" placeholder="Email" />
                             </div>
                             <div>
                                 <label className="input-label">Phone Number *</label>
-                                <input required type="tel" name="phone" value={formData.phone} onChange={handleInputChange} className="input-field" placeholder="07739 166897" />
+                                <input required type="tel" name="phone" value={formData.phone} onChange={handleInputChange} className="input-field" placeholder="Tel" />
                             </div>
                             <div className="md:col-span-2">
                                 <label className="input-label">Full Address *</label>
-                                <textarea required name="address" value={formData.address} onChange={handleInputChange} className="input-field min-h-[80px]" placeholder="35 Percy Road, Leigh-On-Sea, England, SS9 2LA" />
+                                <textarea required name="address" value={formData.address} onChange={handleInputChange} className="input-field min-h-[80px]" placeholder="County" />
                             </div>
                         </div>
                     </div>
