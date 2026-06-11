@@ -2,66 +2,74 @@
 
 import { useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
-import imageCompression from 'browser-image-compression';
-
-const BASELINE_TESTS = [
+import imageCompression from 'browser-image-compression';const BASELINE_TESTS = [
     "Vitamin D Levels (FP)",
     "HbA1c - Diabetes (FP)",
     "hS-CRP Heart Screening (FP)",
     "CRP Inflammation (FP)",
-    "RF Rheumatoid Screening (FP)",
-    "Cortisol Stress Hormone (FP)",
+    "RF Rheumatoid Screening Arthritis (FP)",
+    "Cortisol Screening Stress Hormone (FP)",
     "Ferritin Iron Levels (FP)",
-    "Cystatin C Kidney Screening (FP)",
-    "HCG+B Pregnancy Indication (FP)",
-    "AMH Ovarian Reserve (FP)",
+    "Cystatin C Levels Kidney Screening (FP)",
+    "HCG+ß Pregnancy Indication (FP)",
+    "AMH Ovarian Reserve Level (FP)",
     "Progesterone Ovulation (FP)",
     "Folate (FP)",
     "NT-proBNP Heart Monitoring (VBD)",
-    "TSH Thyroid Screening (VBD)",
-    "FSH Menopause (VBD)",
-    "Vitamin B12 Levels (VBD+C)",
-    "Testosterone (VBD+C)",
     "RSV/Influenza A/B (NS)"
 ];
 
 const getFriendlyTestLabel = (testName: string): string => {
     const labels: Record<string, string> = {
+        // Foundational Tests
+        "Omega Balance Ratio": "Omega Balance Ratio (Dry Blood Spot)",
+        "Gut Health Test": "Gut Health Test (Stool/Blood/Breath)",
+
         // Baseline Tests (Finger-Prick / VBD / VBD+C)
-        "Vitamin D Levels (FP)": "Vitamin D (Finger-Prick)",
+        "Vitamin D Levels (FP)": "Vitamin D Levels (FP) - Results in 8 Mins",
+        "HbA1c - Diabetes (FP)": "HbA1c - Diabetes (FP) - Results in 5 Mins",
+        "hS-CRP Heart Screening (FP)": "hS-CRP Heart Screening (FP) - Results in 3 Mins",
+        "CRP Inflammation (FP)": "CRP Inflammation (FP) - Results in 3 Mins",
+        "RF Rheumatoid Screening Arthritis (FP)": "RF Rheumatoid Screening Arthritis (FP) - Results in 15 Mins",
+        "Cortisol Screening Stress Hormone (FP)": "Cortisol Screening Stress Hormone (FP) - Results in 15 Mins",
+        "Ferritin Iron Levels (FP)": "Ferritin Iron Levels (FP) - Results in 15 Mins",
+        "Cystatin C Levels Kidney Screening (FP)": "Cystatin C Levels Kidney Screening (FP) - Results in 3 Mins",
+        "HCG+ß Pregnancy Indication (FP)": "HCG+ß Pregnancy Indication (FP) - Results in 10 Mins",
+        "AMH Ovarian Reserve Level (FP)": "AMH Ovarian Reserve Level (FP) - Results in 15 Mins",
+        "Progesterone Ovulation (FP)": "Progesterone Ovulation (FP) - Results in 15 Mins",
+        "Folate (FP)": "Folate (FP) - Results in 15 Mins",
+        "NT-proBNP Heart Monitoring (VBD)": "NT-proBNP Heart Monitoring (VBD) - Results in 10 Mins",
+        "RSV/Influenza A/B (NS)": "RSV/Influenza A/B (NS) - Results in 15 Mins",
+
+        // Advanced Tests (Venous / Phlebotomy / VBD + C)
+        "Testosterone (VBD + C)": "Testosterone (VBD + C) - Results in 15 Mins",
+        "Vitamin B12 Levels (VBD + C)": "Vitamin B12 Levels (VBD + C) - Results in 15 Mins",
+        "FSH Menopause (VBD)": "FSH Menopause (VBD) - Results in 15 Mins",
+        "TSH Thyroid Screening (VBD)": "TSH Thyroid Screening (VBD) - Results in 15 Mins",
+
+        // Old equivalents for compatibility in display if any old records are passed
         "Vitamin D": "Vitamin D (Finger-Prick)",
-        "HbA1c - Diabetes (FP)": "HbA1c - Diabetes (Finger-Prick)",
         "HbA1c": "HbA1c - Diabetes (Finger-Prick)",
-        "hS-CRP Heart Screening (FP)": "hS-CRP Heart Screening (Finger-Prick)",
-        "CRP Inflammation (FP)": "CRP / hs-CRP (Finger-Prick)",
         "CRP / hs-CRP": "CRP / hs-CRP (Finger-Prick)",
         "RF Rheumatoid Screening (FP)": "RF Rheumatoid Screening (Finger-Prick)",
         "Cortisol Stress Hormone (FP)": "Cortisol Stress Hormone (Finger-Prick)",
-        "Ferritin Iron Levels (FP)": "Ferritin (Finger-Prick)",
         "Ferritin": "Ferritin (Finger-Prick)",
-        "Cystatin C Kidney Screening (FP)": "Cystatin C (Finger-Prick)",
         "Cystatin C": "Cystatin C (Finger-Prick)",
+        "Cystatin C Kidney Screening (FP)": "Cystatin C (Finger-Prick)",
         "HCG+B Pregnancy Indication (FP)": "HCG+B Pregnancy (Finger-Prick)",
         "AMH Ovarian Reserve (FP)": "AMH Ovarian Reserve (Finger-Prick)",
-        "Progesterone Ovulation (FP)": "Progesterone (Finger-Prick)",
         "Progesterone": "Progesterone (Finger-Prick)",
-        "Folate (FP)": "Folate (Finger-Prick)",
         "Folate": "Folate (Finger-Prick)",
-        "NT-proBNP Heart Monitoring (VBD)": "NT-proBNP (Finger-Prick / VBD)",
-        "TSH Thyroid Screening (VBD)": "Thyroid TSH (Finger-Prick / VBD)",
-        "FSH Menopause (VBD)": "FSH Menopause (Finger-Prick / VBD)",
-        "Vitamin B12 Levels (VBD+C)": "Vitamin B12 (Finger-Prick / VBD+C)",
-        "Testosterone (VBD+C)": "Testosterone (Finger-Prick / VBD+C)",
-        "RSV/Influenza A/B (NS)": "RSV/Influenza A/B (Nasal Swab)",
-
-        // Advanced Tests (Venous / Phlebotomy)
         "Testosterone": "Testosterone (Venous / Phlebotomy)",
         "Thyroid (TSH)": "Thyroid TSH (Venous / Phlebotomy)",
         "Vitamin B12": "Vitamin B12 (Venous / Phlebotomy)",
         "FSH Menopause": "FSH Menopause (Venous / Phlebotomy)",
+        "Testosterone (VBD+C)": "Testosterone (VBD+C)",
+        "Vitamin B12 Levels (VBD+C)": "Vitamin B12 Levels (VBD+C)"
     };
     return labels[testName] || testName;
 };
+
 
 export default function RegistrationForm() {
     const [step, setStep] = useState(1);
@@ -1045,7 +1053,7 @@ export default function RegistrationForm() {
                             {/* TESTING METHODS */}
 
                             <div>
-                                <label className="input-label mb-3 text-[var(--primary)] font-semibold text-lg border-b border-[var(--border)] pb-2">1. Foundational Health Testing (TBN)</label>
+                                <label className="input-label mb-3 text-[var(--primary)] font-semibold text-lg border-b border-[var(--border)] pb-2">1. 15 MINUTE TEST RESULTS - POINT OF CARE TESTING</label>
                                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8 items-start">
                                     {/* Card 1: Foundational Testing */}
                                     <div className={`bg-[var(--surface-hover)] p-5 rounded-xl border transition-all duration-300 flex flex-col ${formData.testingMethods.includes("Foundational Testing") ? 'border-[var(--primary)] shadow-sm' : 'border-[var(--border)] border-opacity-60'}`}>
@@ -1053,19 +1061,19 @@ export default function RegistrationForm() {
                                             <input 
                                                 type="checkbox" 
                                                 checked={formData.testingMethods.includes("Foundational Testing")} 
-                                                onChange={() => handleTierChange("Foundational Testing", ["Omega Balance", "Gut Microbiome", "Intolerance Testing"])} 
+                                                onChange={() => handleTierChange("Foundational Testing", ["Omega Balance Ratio", "Gut Health Test"])} 
                                             />
                                             <span className="checkmark min-w-[20px] mt-0.5"></span>
                                             <div className="ml-2 flex flex-col">
-                                                <span className="text-sm font-bold text-[var(--primary)] tracking-wide uppercase">FOUNDATIONAL TESTING</span>
-                                                <span className="text-[11px] text-[var(--foreground)] opacity-70 font-normal leading-tight mt-0.5">In-clinic or online</span>
+                                                <span className="text-sm font-bold text-[var(--primary)] tracking-wide uppercase leading-snug">FOUNDATIONAL FINGER PRICK IN CLINIC OR AT HOME</span>
+                                                <span className="text-[11px] text-[var(--foreground)] opacity-70 font-normal leading-tight mt-1">In-clinic or online</span>
                                             </div>
                                         </label>
                                         
                                         {/* Sub-checkboxes list */}
                                         {formData.testingMethods.includes("Foundational Testing") && (
                                             <div className="mt-4 pl-8 space-y-3 animate-[fadeIn_0.2s_ease-out]">
-                                                {["Omega Balance", "Gut Microbiome", "Intolerance Testing"].map((subtest) => (
+                                                {["Omega Balance Ratio", "Gut Health Test"].map((subtest) => (
                                                     <label key={subtest} className="custom-checkbox items-center cursor-pointer mb-0">
                                                         <input 
                                                             type="checkbox" 
@@ -1073,7 +1081,7 @@ export default function RegistrationForm() {
                                                             onChange={() => handleSubtestChange(subtest, "Foundational Testing")} 
                                                         />
                                                         <span className="checkmark min-w-[16px] w-4 h-4 !after:left-[4px] !after:top-[1px] !after:w-[4px] !after:h-[8px]"></span>
-                                                        <span className="text-xs font-medium text-[var(--foreground)] opacity-90">{subtest}</span>
+                                                        <span className="text-xs font-medium text-[var(--foreground)] opacity-90">{getFriendlyTestLabel(subtest)}</span>
                                                     </label>
                                                 ))}
                                             </div>
@@ -1090,8 +1098,8 @@ export default function RegistrationForm() {
                                             />
                                             <span className="checkmark min-w-[20px] mt-0.5"></span>
                                             <div className="ml-2 flex flex-col">
-                                                <span className="text-sm font-bold text-[var(--primary)] tracking-wide uppercase">BASELINE SCREENING</span>
-                                                <span className="text-[11px] text-[var(--foreground)] opacity-70 font-normal leading-tight mt-0.5">Rapid finger-prick point-of-care</span>
+                                                <span className="text-sm font-bold text-[var(--primary)] tracking-wide uppercase leading-snug">BASELINE POINT OF CARE SCREENING FINGER PRICK IN CLINIC</span>
+                                                <span className="text-[11px] text-[var(--foreground)] opacity-70 font-normal leading-tight mt-1">15 Minute Test Results - Point of Care Testing</span>
                                             </div>
                                         </label>
                                         
@@ -1119,19 +1127,19 @@ export default function RegistrationForm() {
                                             <input 
                                                 type="checkbox" 
                                                 checked={formData.testingMethods.includes("Advanced Screening")} 
-                                                onChange={() => handleTierChange("Advanced Screening", ["Testosterone", "Thyroid (TSH)", "Vitamin B12", "FSH Menopause"])} 
+                                                onChange={() => handleTierChange("Advanced Screening", ["Testosterone (VBD + C)", "Vitamin B12 Levels (VBD + C)", "FSH Menopause (VBD)", "TSH Thyroid Screening (VBD)"])} 
                                             />
                                             <span className="checkmark min-w-[20px] mt-0.5"></span>
                                             <div className="ml-2 flex flex-col">
-                                                <span className="text-sm font-bold text-[var(--primary)] tracking-wide uppercase">ADVANCED SCREENING</span>
-                                                <span className="text-[11px] text-[var(--foreground)] opacity-70 font-normal leading-tight mt-0.5">Phlebotomy (where required)</span>
+                                                <span className="text-sm font-bold text-[var(--primary)] tracking-wide uppercase leading-snug">ADVANCED POINT OF CARE SCREENING PHLEBOTOMY/BLOOD DRAW IN CLINIC</span>
+                                                <span className="text-[11px] text-[var(--foreground)] opacity-70 font-normal leading-tight mt-1">15 Minute Test Results - Point of Care Testing</span>
                                             </div>
                                         </label>
                                         
                                         {/* Sub-checkboxes list */}
                                         {formData.testingMethods.includes("Advanced Screening") && (
                                             <div className="mt-4 pl-8 space-y-3 animate-[fadeIn_0.2s_ease-out]">
-                                                {["Testosterone", "Thyroid (TSH)", "Vitamin B12", "FSH Menopause"].map((subtest) => (
+                                                {["Testosterone (VBD + C)", "Vitamin B12 Levels (VBD + C)", "FSH Menopause (VBD)", "TSH Thyroid Screening (VBD)"].map((subtest) => (
                                                     <label key={subtest} className="custom-checkbox items-center cursor-pointer mb-0">
                                                         <input 
                                                             type="checkbox" 
