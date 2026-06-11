@@ -84,6 +84,7 @@ export default function RegistrationForm() {
         firstBalanceResult: "",
         secondBalanceResult: "",
         whyJoinedTBN: "",
+        whyPartneredTBN: "",
         otherBloodTests: "",
         experience: "",
     });
@@ -226,7 +227,8 @@ export default function RegistrationForm() {
     const isStep1Valid = formData.firstName && formData.lastName && formData.title && formData.bio && formData.experience && getWordCount(formData.bio) <= 100;
     const isStep2Valid = formData.credentials 
         && getWordCount(formData.credentials) <= 50
-        && getWordCount(formData.whyJoinedTBN) <= 50;
+        && getWordCount(formData.whyJoinedTBN) <= 50
+        && getWordCount(formData.whyPartneredTBN) <= 50;
     const isStep3Valid = formData.testimonial1 && getWordCount(formData.testimonial1) <= 50
         && getWordCount(formData.testimonial2) <= 50
         && getWordCount(formData.testimonial3) <= 50;
@@ -395,6 +397,7 @@ export default function RegistrationForm() {
                             first_balance_result: formData.firstBalanceResult,
                             second_balance_result: formData.secondBalanceResult,
                             why_joined_tbn: formData.whyJoinedTBN,
+                            why_partnered_tbn: formData.whyPartneredTBN,
                             other_blood_tests: formData.otherBloodTests,
                             gallery_image_urls: galleryUrls,
                             news_hub_article_interest: formData.newsHubInterest === "Yes",
@@ -619,6 +622,18 @@ export default function RegistrationForm() {
                                             placeholder="Tell us about your transformational journey"
                                         />
                                         <WordCounter text={formData.whyJoinedTBN} limit={50} />
+                                    </div>
+
+                                    <div>
+                                        <label className="text-sm font-medium opacity-80 mb-2 block">Why I Partnered with TBN</label>
+                                        <textarea
+                                            name="whyPartneredTBN"
+                                            value={formData.whyPartneredTBN}
+                                            onChange={handleInputChange}
+                                            className={`input-field min-h-[100px] leading-relaxed ${getWordCount(formData.whyPartneredTBN) > 50 ? '!border-red-500' : ''}`}
+                                            placeholder="Explain why you chose to partner with Test-Based Nutrition"
+                                        />
+                                        <WordCounter text={formData.whyPartneredTBN} limit={50} />
                                     </div>
                                 </div>
                             </div>
