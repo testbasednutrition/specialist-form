@@ -610,7 +610,7 @@ export default function RegistrationForm() {
                                     </div>
 
                                     <div>
-                                        <label className="text-sm font-medium opacity-80 mb-2 block">Why I joined Test-Based Nutrition!</label>
+                                        <label className="text-sm font-medium opacity-80 mb-2 block">My Personal Test-Based Omega Balance Journey</label>
                                         <textarea
                                             name="whyJoinedTBN"
                                             value={formData.whyJoinedTBN}
