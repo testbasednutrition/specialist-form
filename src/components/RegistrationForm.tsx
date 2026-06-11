@@ -745,6 +745,7 @@ export default function RegistrationForm() {
                                         <option value="Health, Lifestyle, Mindset & Beauty">4. Health, Lifestyle, Mindset & Beauty</option>
                                         <option value="Mental Health & Neuro-Specialists">5. Mental Health & Neuro-Specialists</option>
                                         <option value="Sports Performance & Rehabilitation">6. Sports Performance & Rehabilitation</option>
+                                        <option value="TBN Leadership Team">7. TBN Leadership Team</option>
                                     </select>
                                 </div>
 
@@ -911,6 +912,18 @@ export default function RegistrationForm() {
                                                         <option value="Sports Therapist">Sports Therapist</option>
                                                         <option value="Recovery Specialist">Recovery Specialist</option>
                                                         <option value="Rehabilitation Specialist">Rehabilitation Specialist</option>
+                                                    </optgroup>
+                                                </>
+                                            )}
+
+                                            {/* 7. TBN Leadership */}
+                                            {formData.primaryCategory === "TBN Leadership Team" && (
+                                                <>
+                                                    <optgroup label="Leadership Roles">
+                                                        <option value="Medical Advisory Team">Medical Advisory Team</option>
+                                                        <option value="Integration & Growth Lead">Integration & Growth Lead</option>
+                                                        <option value="Marketing & Commercial Lead">Marketing & Commercial Lead</option>
+                                                        <option value="Consultant">Consultant</option>
                                                     </optgroup>
                                                 </>
                                             )}
