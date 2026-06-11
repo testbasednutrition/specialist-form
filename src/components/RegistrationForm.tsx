@@ -25,6 +25,44 @@ const BASELINE_TESTS = [
     "RSV/Influenza A/B (NS)"
 ];
 
+const getFriendlyTestLabel = (testName: string): string => {
+    const labels: Record<string, string> = {
+        // Baseline Tests (Finger-Prick / VBD / VBD+C)
+        "Vitamin D Levels (FP)": "Vitamin D (Finger-Prick)",
+        "Vitamin D": "Vitamin D (Finger-Prick)",
+        "HbA1c - Diabetes (FP)": "HbA1c - Diabetes (Finger-Prick)",
+        "HbA1c": "HbA1c - Diabetes (Finger-Prick)",
+        "hS-CRP Heart Screening (FP)": "hS-CRP Heart Screening (Finger-Prick)",
+        "CRP Inflammation (FP)": "CRP / hs-CRP (Finger-Prick)",
+        "CRP / hs-CRP": "CRP / hs-CRP (Finger-Prick)",
+        "RF Rheumatoid Screening (FP)": "RF Rheumatoid Screening (Finger-Prick)",
+        "Cortisol Stress Hormone (FP)": "Cortisol Stress Hormone (Finger-Prick)",
+        "Ferritin Iron Levels (FP)": "Ferritin (Finger-Prick)",
+        "Ferritin": "Ferritin (Finger-Prick)",
+        "Cystatin C Kidney Screening (FP)": "Cystatin C (Finger-Prick)",
+        "Cystatin C": "Cystatin C (Finger-Prick)",
+        "HCG+B Pregnancy Indication (FP)": "HCG+B Pregnancy (Finger-Prick)",
+        "AMH Ovarian Reserve (FP)": "AMH Ovarian Reserve (Finger-Prick)",
+        "Progesterone Ovulation (FP)": "Progesterone (Finger-Prick)",
+        "Progesterone": "Progesterone (Finger-Prick)",
+        "Folate (FP)": "Folate (Finger-Prick)",
+        "Folate": "Folate (Finger-Prick)",
+        "NT-proBNP Heart Monitoring (VBD)": "NT-proBNP (Finger-Prick / VBD)",
+        "TSH Thyroid Screening (VBD)": "Thyroid TSH (Finger-Prick / VBD)",
+        "FSH Menopause (VBD)": "FSH Menopause (Finger-Prick / VBD)",
+        "Vitamin B12 Levels (VBD+C)": "Vitamin B12 (Finger-Prick / VBD+C)",
+        "Testosterone (VBD+C)": "Testosterone (Finger-Prick / VBD+C)",
+        "RSV/Influenza A/B (NS)": "RSV/Influenza A/B (Nasal Swab)",
+
+        // Advanced Tests (Venous / Phlebotomy)
+        "Testosterone": "Testosterone (Venous / Phlebotomy)",
+        "Thyroid (TSH)": "Thyroid TSH (Venous / Phlebotomy)",
+        "Vitamin B12": "Vitamin B12 (Venous / Phlebotomy)",
+        "FSH Menopause": "FSH Menopause (Venous / Phlebotomy)",
+    };
+    return labels[testName] || testName;
+};
+
 export default function RegistrationForm() {
     const [step, setStep] = useState(1);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -1068,7 +1106,7 @@ export default function RegistrationForm() {
                                                             onChange={() => handleSubtestChange(subtest, "Baseline Screening")} 
                                                         />
                                                         <span className="checkmark min-w-[16px] w-4 h-4 !after:left-[4px] !after:top-[1px] !after:w-[4px] !after:h-[8px]"></span>
-                                                        <span className="text-xs font-medium text-[var(--foreground)] opacity-90">{subtest}</span>
+                                                        <span className="text-xs font-medium text-[var(--foreground)] opacity-90">{getFriendlyTestLabel(subtest)}</span>
                                                     </label>
                                                 ))}
                                             </div>
@@ -1101,7 +1139,7 @@ export default function RegistrationForm() {
                                                             onChange={() => handleSubtestChange(subtest, "Advanced Screening")} 
                                                         />
                                                         <span className="checkmark min-w-[16px] w-4 h-4 !after:left-[4px] !after:top-[1px] !after:w-[4px] !after:h-[8px]"></span>
-                                                        <span className="text-xs font-medium text-[var(--foreground)] opacity-90">{subtest}</span>
+                                                        <span className="text-xs font-medium text-[var(--foreground)] opacity-90">{getFriendlyTestLabel(subtest)}</span>
                                                     </label>
                                                 ))}
                                             </div>
