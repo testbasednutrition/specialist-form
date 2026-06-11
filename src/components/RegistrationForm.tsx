@@ -698,7 +698,7 @@ export default function RegistrationForm() {
                             </div>
                             <div className="md:col-span-2">
                                 <label className="input-label">Full Address *</label>
-                                <textarea required name="address" value={formData.address} onChange={handleInputChange} className="input-field min-h-[80px]" placeholder="County" />
+                                <textarea required name="address" value={formData.address} onChange={handleInputChange} className="input-field min-h-[80px]" placeholder="Address" />
                             </div>
                         </div>
                     </div>
