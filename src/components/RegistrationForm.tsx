@@ -616,7 +616,7 @@ export default function RegistrationForm() {
                                             value={formData.whyJoinedTBN}
                                             onChange={handleInputChange}
                                             className={`input-field min-h-[100px] leading-relaxed ${getWordCount(formData.whyJoinedTBN) > 50 ? '!border-red-500' : ''}`}
-                                            placeholder="E.g. Discovered the power of Omega-3 balance for my clients..."
+                                            placeholder="Tell us about your transformational journey"
                                         />
                                         <WordCounter text={formData.whyJoinedTBN} limit={50} />
                                     </div>
